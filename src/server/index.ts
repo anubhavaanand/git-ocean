@@ -128,6 +128,12 @@ export interface Env {
   BETTER_AUTH_URL: string
   GOOGLE_CLIENT_ID?: string
   GOOGLE_CLIENT_SECRET?: string
+
+  // GitHub OAuth
+  GITHUB_CLIENT_ID?: string
+  GITHUB_CLIENT_SECRET?: string
+  GITHUB_REDIRECT_URI?: string
+  GITHUB_WEBHOOK_SECRET?: string
   EMAIL_API_KEY?: string
   EMAIL_FROM?: string
   APP_NAME?: string

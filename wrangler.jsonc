@@ -332,6 +332,15 @@
     }
   ],
 
+  // Environment Variables (non-secret)
+  // Set actual values via `wrangler secret put` or Cloudflare Dashboard
+  "vars": {
+    "GITHUB_CLIENT_ID": "",
+    "GITHUB_CLIENT_SECRET": "",
+    "GITHUB_REDIRECT_URI": "http://localhost:5173/auth/github/callback",
+    "GITHUB_WEBHOOK_SECRET": ""
+  },
+
   // Observability
   "observability": {
     "enabled": true,
