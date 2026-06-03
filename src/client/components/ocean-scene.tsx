@@ -1,5 +1,17 @@
 import { useEffect, useRef } from 'react'
-import * as THREE from 'three'
+import {
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  Color,
+  Vector3,
+  PCFSoftShadowMap,
+  ACESFilmicToneMapping,
+  ShaderMaterial,
+  Mesh,
+  Points,
+  Clock,
+} from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
   createUnderwaterFog,
@@ -12,27 +24,27 @@ import { setupOceanLighting } from './ocean-lighting'
 interface OceanSceneProps {
   className?: string
   onSceneReady?: (
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    renderer: THREE.WebGLRenderer,
+    scene: Scene,
+    camera: PerspectiveCamera,
+    renderer: WebGLRenderer,
   ) => void
   updatables?: { current: ((time: number) => void)[] }
 }
 
 const CORAL_POSITIONS = [
-  new THREE.Vector3(-5, -15, -4),
-  new THREE.Vector3(4, -17, 3),
-  new THREE.Vector3(-3, -18, -6),
-  new THREE.Vector3(6, -16, -2),
-  new THREE.Vector3(-6, -14, 5),
+  new Vector3(-5, -15, -4),
+  new Vector3(4, -17, 3),
+  new Vector3(-3, -18, -6),
+  new Vector3(6, -16, -2),
+  new Vector3(-6, -14, 5),
 ]
 
 const CORAL_COLORS = [
-  new THREE.Color('#ff6b6b'),
-  new THREE.Color('#ffa07a'),
-  new THREE.Color('#e056fd'),
-  new THREE.Color('#7ed6df'),
-  new THREE.Color('#ff9ff3'),
+  new Color('#ff6b6b'),
+  new Color('#ffa07a'),
+  new Color('#e056fd'),
+  new Color('#7ed6df'),
+  new Color('#ff9ff3'),
 ]
 
 export function OceanScene({ className, onSceneReady, updatables }: OceanSceneProps) {
@@ -49,22 +61,22 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
     const w = container.clientWidth
     const h = container.clientHeight
 
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#0a1628')
+    const scene = new Scene()
+    scene.background = new Color('#0a1628')
 
-    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 100)
+    const camera = new PerspectiveCamera(60, w / h, 0.1, 100)
     camera.position.set(0, -8, 12)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    const renderer = new WebGLRenderer({ antialias: true })
     renderer.setSize(w, h)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.shadowMap.type = PCFSoftShadowMap
+    renderer.toneMapping = ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.0
     container.appendChild(renderer.domElement)
 
-    createUnderwaterFog(scene, new THREE.Color('#0a1628'), 0.035)
+    createUnderwaterFog(scene, new Color('#0a1628'), 0.035)
     setupOceanLighting(scene)
 
     const water = createWaterSurface(12, 64)
@@ -94,18 +106,18 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
       onSceneReadyRef.current(scene, camera, renderer)
     }
 
-    const clock = new THREE.Clock()
+    const clock = new Clock()
     let animationId: number
 
     const animate = () => {
       const elapsed = clock.getElapsedTime()
 
-      if (water.material instanceof THREE.ShaderMaterial) {
+      if (water.material instanceof ShaderMaterial) {
         const timeUniform = water.material.uniforms['uTime']
         if (timeUniform) timeUniform.value = elapsed
       }
 
-      if (particles.material instanceof THREE.ShaderMaterial) {
+      if (particles.material instanceof ShaderMaterial) {
         const timeUniform = particles.material.uniforms['uTime']
         if (timeUniform) timeUniform.value = elapsed
       }
@@ -138,7 +150,7 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
       controls.dispose()
       renderer.dispose()
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh || obj instanceof THREE.Points) {
+        if (obj instanceof Mesh || obj instanceof Points) {
           obj.geometry.dispose()
           const materials = Array.isArray(obj.material)
             ? obj.material

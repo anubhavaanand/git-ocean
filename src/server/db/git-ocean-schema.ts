@@ -70,6 +70,35 @@ export const worldMapData = sqliteTable('git_ocean_world_map', {
   userIdCountryIdx: uniqueIndex('world_map_user_country_idx').on(table.userId, table.country),
 }))
 
+export const obeliskSkins = sqliteTable('git_ocean_obelisk_skins', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  description: text('description'),
+  modelConfig: text('model_config').notNull(),
+  createdBy: text('created_by').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  epoch: integer('epoch').notNull(),
+})
+
+export const obeliskVotes = sqliteTable('git_ocean_obelisk_votes', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  skinId: text('skin_id').notNull().references(() => obeliskSkins.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  countryCode: text('country_code').notNull(),
+  epoch: integer('epoch').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  userSkinCountryIdx: uniqueIndex('obelisk_votes_user_skin_country_idx').on(table.userId, table.skinId, table.countryCode),
+}))
+
+export const obeliskEpochs = sqliteTable('git_ocean_obelisk_epochs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  epoch: integer('epoch').notNull().unique(),
+  startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
+  endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+})
+
 export const gitHubConnections = sqliteTable('git_ocean_github_connections', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }),

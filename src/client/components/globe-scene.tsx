@@ -1,5 +1,18 @@
 import { useEffect, useRef } from 'react'
-import * as THREE from 'three'
+import {
+  Scene,
+  PerspectiveCamera,
+  WebGLRenderer,
+  Color,
+  ACESFilmicToneMapping,
+  AmbientLight,
+  DirectionalLight,
+  Group,
+  Mesh,
+  Points,
+  ShaderMaterial,
+  Clock,
+} from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createGlobe, createAtmosphere, createCloudLayer, getZoomLevel } from './globe-helpers'
 
@@ -8,9 +21,9 @@ export type { ZoomLevel } from './globe-helpers'
 interface GlobeSceneProps {
   className?: string
   onSceneReady?: (
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
-    renderer: THREE.WebGLRenderer,
+    scene: Scene,
+    camera: PerspectiveCamera,
+    renderer: WebGLRenderer,
   ) => void
   updatables?: { current: ((time: number) => void)[] }
   onZoomChange?: (level: string, distance: number) => void
@@ -22,9 +35,9 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
   onSceneReadyRef.current = onSceneReady
   const updatablesRef = useRef(updatables)
   updatablesRef.current = updatables
-  const globeGroupRef = useRef<THREE.Group | null>(null)
-  const atmosphereRef = useRef<THREE.Mesh | null>(null)
-  const cloudRef = useRef<THREE.Group | null>(null)
+  const globeGroupRef = useRef<Group | null>(null)
+  const atmosphereRef = useRef<Mesh | null>(null)
+  const cloudRef = useRef<Group | null>(null)
   const onZoomChangeRef = useRef(onZoomChange)
   onZoomChangeRef.current = onZoomChange
 
@@ -35,16 +48,16 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
     const w = container.clientWidth
     const h = container.clientHeight
 
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#050b18')
+    const scene = new Scene()
+    scene.background = new Color('#050b18')
 
-    const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100)
+    const camera = new PerspectiveCamera(45, w / h, 0.1, 100)
     camera.position.set(0, 1.5, 7)
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    const renderer = new WebGLRenderer({ antialias: true })
     renderer.setSize(w, h)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMapping = ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.0
     container.appendChild(renderer.domElement)
 
@@ -76,14 +89,14 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
     let lastZoomLevel = getZoomLevel(controls.object.position.distanceTo(controls.target))
     onZoomChangeRef.current?.(lastZoomLevel, controls.object.position.distanceTo(controls.target))
 
-    const ambientLight = new THREE.AmbientLight(0x1a2a4a, 0.5)
+    const ambientLight = new AmbientLight(0x1a2a4a, 0.5)
     scene.add(ambientLight)
 
-    const sunLight = new THREE.DirectionalLight(0x4a9eff, 2.0)
+    const sunLight = new DirectionalLight(0x4a9eff, 2.0)
     sunLight.position.set(10, 10, 5)
     scene.add(sunLight)
 
-    const rimLight = new THREE.DirectionalLight(0x06b6d4, 0.8)
+    const rimLight = new DirectionalLight(0x06b6d4, 0.8)
     rimLight.position.set(-5, -5, -10)
     scene.add(rimLight)
 
@@ -91,7 +104,7 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
       onSceneReadyRef.current(scene, camera, renderer)
     }
 
-    const clock = new THREE.Clock()
+    const clock = new Clock()
     let animationId: number
 
     const animate = () => {
@@ -100,7 +113,7 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
       globe.rotation.y = elapsed * 0.05
       clouds.rotation.y = elapsed * 0.07
 
-      if (atmosphere.material instanceof THREE.ShaderMaterial) {
+      if (atmosphere.material instanceof ShaderMaterial) {
         const timeUniform = atmosphere.material.uniforms['time']
         if (timeUniform) timeUniform.value = elapsed
       }
@@ -148,7 +161,7 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
       controls.dispose()
       renderer.dispose()
       scene.traverse((obj) => {
-        if (obj instanceof THREE.Mesh || obj instanceof THREE.Points) {
+        if (obj instanceof Mesh || obj instanceof Points) {
           obj.geometry.dispose()
           const materials = Array.isArray(obj.material)
             ? obj.material

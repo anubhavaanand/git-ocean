@@ -1,10 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react'
-import * as THREE from 'three'
+import { Scene, Vector3, Euler } from 'three'
 import { OceanScene } from './ocean-scene'
 import { createOceanFloor } from './ocean-floor'
 import { createKelpTower } from './kelp-tower'
 import { createWhale, type WhaleEntity } from './whale-entity'
-import { createCreature, type CreatureConfig, type CreatureType } from './creature-factory'
+import {
+  createCreature,
+  createInstancedSwarm,
+  type CreatureConfig,
+  type CreatureType,
+} from './creature-factory'
 import type { GitHubRepoData } from '@/client/hooks/use-ocean-data'
 
 interface OceanComposerProps {
@@ -43,9 +48,10 @@ function repoToCreatureType(repo: GitHubRepoData): CreatureType {
 
 export function OceanComposer({ repoData, className }: OceanComposerProps) {
   const updatablesRef = useRef<((time: number) => void)[]>([])
+  const SWARM_TYPES: CreatureType[] = ['jellyfish', 'barracuda', 'dolphin']
 
   const handleSceneReady = useCallback(
-    (scene: THREE.Scene) => {
+    (scene: Scene) => {
       const floor = createOceanFloor(FLOOR_SIZE, FLOOR_Y)
       scene.add(floor)
 
@@ -54,7 +60,7 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
       repoData.forEach((repo, index) => {
         const color = WHALE_COLORS[index % WHALE_COLORS.length] as string
         const angle = (index / repoData.length) * Math.PI * 2 - Math.PI / 2
-        const pos = new THREE.Vector3(
+        const pos = new Vector3(
           Math.cos(angle) * ARRANGE_RADIUS,
           FLOOR_Y + 1,
           Math.sin(angle) * ARRANGE_RADIUS,
@@ -86,8 +92,41 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
           orbitRadius: 1.2 + Math.random() * 0.5,
           orbitSpeed: 0.5 + Math.random() * 0.5,
         }
-        const creatures = createCreature(creatureConfig)
-        whale.add(creatures)
+
+        if (creatureConfig.count >= 2 && SWARM_TYPES.includes(creatureType)) {
+          const swarm = createInstancedSwarm(
+            creatureType,
+            creatureConfig.count,
+            creatureConfig.size,
+            creatureConfig.color,
+          )
+          const offsets = Array.from(
+            { length: creatureConfig.count },
+            (_, i) => (i / creatureConfig.count) * Math.PI * 2,
+          )
+          const r = creatureConfig.orbitRadius
+
+          for (let i = 0; i < creatureConfig.count; i++) {
+            const a = offsets[i]!
+            swarm.updateInstance(
+              i,
+              new Vector3(
+                Math.cos(a) * (r + (Math.random() - 0.5) * 0.5),
+                Math.sin(0 + a) * 0.3,
+                Math.sin(a) * (r + (Math.random() - 0.5) * 0.5),
+              ),
+              new Euler(0, -a + Math.PI / 2, 0),
+              new Vector3(1, 1, 1),
+            )
+          }
+
+          for (const mesh of swarm.meshes) {
+            whale.add(mesh)
+          }
+        } else {
+          const creatures = createCreature(creatureConfig)
+          whale.add(creatures)
+        }
       })
 
       updatablesRef.current.push((time: number) => {

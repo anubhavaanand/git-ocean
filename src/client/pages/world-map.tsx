@@ -9,6 +9,7 @@ import type { ZoomLevel } from '@/client/components/globe-scene'
 import { GlobeComposer } from '@/client/components/globe-composer'
 import { ZOOM_LEVELS, clampToZoomLevel } from '@/client/components/globe-helpers'
 import { useWorldMapData, type CountryData } from '@/client/hooks/use-world-map-data'
+import { ObeliskVotePanel } from '@/client/components/obelisk-vote-panel'
 
 const LANGUAGE_COLORS: Record<string, string> = {
   JavaScript: '#f7df1e',
@@ -81,6 +82,7 @@ export function WorldMapPage() {
   const totalRepos = countries.reduce((s, c) => s + c.repoCount, 0)
   const totalContributors = countries.reduce((s, c) => s + c.contributorCount, 0)
   const topCountries = [...countries].sort((a, b) => b.repoCount - a.repoCount).slice(5)
+  const topCountryCodes = new Set(topCountries.map((c) => c.code))
   const colonyCountries = countries.filter((c) => c.repoCount < 50).slice(0, 6)
 
   return (
@@ -193,7 +195,7 @@ export function WorldMapPage() {
 
           {/* Right country detail panel */}
           {selectedCountry && (
-            <div className="pointer-events-auto ml-auto flex flex-col p-4">
+            <div className="pointer-events-auto ml-auto flex flex-col gap-3 p-4">
               <Card className="w-72 border-primary/20 bg-background/70 backdrop-blur-xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3">
                   <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -275,6 +277,10 @@ export function WorldMapPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {topCountryCodes.has(selectedCountry.code) && (
+                <ObeliskVotePanel countryCode={selectedCountry.code} />
+              )}
             </div>
           )}
         </div>

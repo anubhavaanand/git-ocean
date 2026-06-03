@@ -1,7 +1,12 @@
-import * as THREE from 'three'
+import {
+  PlaneGeometry,
+  BufferAttribute,
+  MeshStandardMaterial,
+  Mesh,
+} from 'three'
 
 export function createOceanFloor(size: number, yPosition: number) {
-  const geometry = new THREE.PlaneGeometry(size, size, 20, 20)
+  const geometry = new PlaneGeometry(size, size, 20, 20)
   geometry.rotateX(-Math.PI / 2)
 
   const positionAttribute = geometry.attributes['position']
@@ -13,15 +18,15 @@ export function createOceanFloor(size: number, yPosition: number) {
     colors[i3 + 1] = 0.12 + Math.random() * 0.05
     colors[i3 + 2] = 0.15 + Math.random() * 0.05
   }
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geometry.setAttribute('color', new BufferAttribute(colors, 3))
 
-  const material = new THREE.MeshStandardMaterial({
+  const material = new MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.9,
     metalness: 0,
   })
 
-  const mesh = new THREE.Mesh(geometry, material)
+  const mesh = new Mesh(geometry, material)
   mesh.position.y = yPosition
   mesh.receiveShadow = true
   return mesh

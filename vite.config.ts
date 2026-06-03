@@ -41,12 +41,24 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 2000,
     // Vite 8 uses rolldownOptions (Rolldown replaces Rollup)
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Source code chunks - split by domain
+          if (id.includes('/src/client/components/ocean-') ||
+              id.includes('/src/client/components/creature-') ||
+              id.includes('/src/client/components/kelp-') ||
+              id.includes('/src/client/components/whale-') ||
+              id.includes('/src/client/components/lod-')) return 'ocean-3d'
+          if (id.includes('/client/components/globe-')) return 'globe-3d'
+          if (id.includes('/src/client/components/shared/')) return 'ui'
+
           if (!id.includes('node_modules')) return undefined
+          // Three.js bundle splitting
+          if (id.includes('/three/') && !id.includes('/three/examples/')) return 'three'
+          if (id.includes('/three/examples/')) return 'three-addons'
           // Heavy libs — keep out of main chunk, loaded on demand.
           if (id.includes('/streamdown/')) return 'streamdown'
           if (id.includes('/mermaid/')) return 'mermaid'

@@ -373,6 +373,126 @@ function createStarfish(size: number, color: string): THREE.Group {
   return g
 }
 
+export interface SwarmInstance {
+  position: THREE.Vector3
+  rotation: THREE.Euler
+  scale: THREE.Vector3
+}
+
+export interface InstancedSwarm {
+  meshes: THREE.InstancedMesh[]
+  count: number
+  updateInstance(
+    index: number,
+    position: THREE.Vector3,
+    rotation: THREE.Euler,
+    scale: THREE.Vector3,
+  ): void
+  dispose(): void
+}
+
+interface CreaturePart {
+  geometry: THREE.BufferGeometry
+  material: THREE.Material | THREE.Material[]
+  localMatrix: THREE.Matrix4
+}
+
+function getCreatureParts(
+  creatureType: CreatureType,
+  size: number,
+  color: string,
+): CreaturePart[] | null {
+  let group: THREE.Group
+  const s = size * 0.5
+
+  switch (creatureType) {
+    case 'dolphin': {
+      group = createDolphin(size, color)
+      break
+    }
+    case 'jellyfish': {
+      group = createJellyfish(size, color)
+      break
+    }
+    case 'barracuda': {
+      group = createBarracuda(size, color)
+      break
+    }
+    default:
+      return null
+  }
+  void s
+
+  const parts: CreaturePart[] = []
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const localMatrix = new THREE.Matrix4()
+      localMatrix.compose(child.position, child.quaternion, child.scale)
+      parts.push({
+        geometry: child.geometry,
+        material: child.material,
+        localMatrix,
+      })
+    }
+  })
+
+  return parts
+}
+
+export function createInstancedSwarm(
+  creatureType: CreatureType,
+  count: number,
+  size: number,
+  color: string,
+): InstancedSwarm {
+  const parts = getCreatureParts(creatureType, size, color)
+  if (!parts || parts.length === 0) {
+    throw new Error(`Cannot create instanced swarm for creature type: ${creatureType}`)
+  }
+
+  const meshes: THREE.InstancedMesh[] = parts.map((part) => {
+    const material = Array.isArray(part.material)
+      ? part.material.map((m) => m.clone())
+      : part.material.clone()
+    const im = new THREE.InstancedMesh(part.geometry, material, count)
+    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+    im.castShadow = true
+    im.receiveShadow = true
+    return im
+  })
+
+  const updateInstance = (
+    index: number,
+    position: THREE.Vector3,
+    rotation: THREE.Euler,
+    scale: THREE.Vector3,
+  ) => {
+    const worldMatrix = new THREE.Matrix4()
+    worldMatrix.compose(position, new THREE.Quaternion().setFromEuler(rotation), scale)
+
+    for (let i = 0; i < parts.length; i++) {
+      const im = meshes[i]
+      if (!im) continue
+      const matrix = new THREE.Matrix4().multiplyMatrices(worldMatrix, parts[i]!.localMatrix)
+      im.setMatrixAt(index, matrix)
+      im.instanceMatrix.needsUpdate = true
+    }
+  }
+
+  const dispose = () => {
+    for (const im of meshes) {
+      im.geometry.dispose()
+      if (Array.isArray(im.material)) {
+        im.material.forEach((m) => m.dispose())
+      } else {
+        im.material.dispose()
+      }
+    }
+  }
+
+  return { meshes, count, updateInstance, dispose }
+}
+
 export function createCreature(config: CreatureConfig): THREE.Group {
   const group = new THREE.Group()
 

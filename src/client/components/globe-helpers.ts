@@ -456,3 +456,75 @@ export function clampToZoomLevel(distance: number): number {
     Math.abs(curr - distance) < Math.abs(prev - distance) ? curr : prev,
   )
 }
+
+export interface SkinPreviewConfig {
+  color: string
+  height: number
+  rings: number
+  glowColor: string
+  tipColor: string
+  pattern: string
+}
+
+export function createSkinPreviewObelisk(skinConfig: SkinPreviewConfig) {
+  const group = new THREE.Group()
+
+  const pillarGeo = new THREE.CylinderGeometry(0.04, 0.08, skinConfig.height, 6)
+  const pillarMat = new THREE.MeshBasicMaterial({
+    color: skinConfig.color,
+    transparent: true,
+    opacity: 0.7,
+  })
+  const pillar = new THREE.Mesh(pillarGeo, pillarMat)
+  pillar.position.y = skinConfig.height / 2
+  group.add(pillar)
+
+  const ringCount = Math.min(skinConfig.rings, 6)
+  for (let i = 0; i < ringCount; i++) {
+    const ringGeo = new THREE.TorusGeometry(0.08 + i * 0.06, 0.01, 6, 12)
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: skinConfig.color,
+      transparent: true,
+      opacity: 0.4 - i * 0.1,
+    })
+    const ring = new THREE.Mesh(ringGeo, ringMat)
+    ring.position.y = skinConfig.height * (0.3 + (i / Math.max(ringCount - 1, 1)) * 0.5)
+    ring.rotation.x = Math.PI / 2
+    group.add(ring)
+  }
+
+  const tipGeo = new THREE.SphereGeometry(0.06, 8, 8)
+  const tipMat = new THREE.MeshBasicMaterial({
+    color: skinConfig.tipColor,
+    transparent: true,
+    opacity: 0.9,
+  })
+  const tip = new THREE.Mesh(tipGeo, tipMat)
+  tip.position.y = skinConfig.height
+  group.add(tip)
+
+  const glowCanvas = document.createElement('canvas')
+  glowCanvas.width = 64
+  glowCanvas.height = 64
+  const ctx = glowCanvas.getContext('2d')!
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+  grad.addColorStop(0, skinConfig.tipColor)
+  grad.addColorStop(0.2, skinConfig.glowColor)
+  grad.addColorStop(1, 'transparent')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, 64, 64)
+
+  const glowMap = new THREE.CanvasTexture(glowCanvas)
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowMap,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+  })
+  const glow = new THREE.Sprite(glowMat)
+  glow.scale.set(0.8, 0.8, 1)
+  glow.position.y = skinConfig.height * 0.5
+  group.add(glow)
+
+  return group
+}

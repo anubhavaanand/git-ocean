@@ -1,10 +1,10 @@
-import * as THREE from 'three'
+import { Scene, HemisphereLight, DirectionalLight } from 'three'
 
-export function setupOceanLighting(scene: THREE.Scene) {
-  const ambient = new THREE.HemisphereLight('#1a5276', '#0a1628', 0.6)
+export function setupOceanLighting(scene: Scene) {
+  const ambient = new HemisphereLight('#1a5276', '#0a1628', 0.6)
   scene.add(ambient)
 
-  const light = new THREE.DirectionalLight('#ffffff', 0.8)
+  const light = new DirectionalLight('#ffffff', 0.8)
   light.position.set(0, 15, 5)
   light.castShadow = true
   light.shadow.mapSize.width = 1024
