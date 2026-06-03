@@ -15,6 +15,8 @@ import {
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { createGlobe, createAtmosphere, createCloudLayer, getZoomLevel } from './globe-helpers'
+import { createRenderer } from '@/client/lib/createRenderer'
+import type { RendererVariant } from '@/client/lib/createRenderer'
 
 export type { ZoomLevel } from './globe-helpers'
 
@@ -25,14 +27,17 @@ interface GlobeSceneProps {
     camera: PerspectiveCamera,
     renderer: WebGLRenderer,
   ) => void
+  onRendererVariant?: (variant: RendererVariant) => void
   updatables?: { current: ((time: number) => void)[] }
   onZoomChange?: (level: string, distance: number) => void
 }
 
-export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }: GlobeSceneProps) {
+export function GlobeScene({ className, onSceneReady, onRendererVariant, updatables, onZoomChange }: GlobeSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
+  const onRendererVariantRef = useRef(onRendererVariant)
+  onRendererVariantRef.current = onRendererVariant
   const updatablesRef = useRef(updatables)
   updatablesRef.current = updatables
   const globeGroupRef = useRef<Group | null>(null)
@@ -45,21 +50,24 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
     const container = containerRef.current
     if (!container) return
 
-    const w = container.clientWidth
-    const h = container.clientHeight
+    ;(async () => {
+      const w = container.clientWidth
+      const h = container.clientHeight
 
-    const scene = new Scene()
-    scene.background = new Color('#050b18')
+      const scene = new Scene()
+      scene.background = new Color('#050b18')
 
-    const camera = new PerspectiveCamera(45, w / h, 0.1, 100)
-    camera.position.set(0, 1.5, 7)
+      const camera = new PerspectiveCamera(45, w / h, 0.1, 100)
+      camera.position.set(0, 1.5, 7)
 
-    const renderer = new WebGLRenderer({ antialias: true })
-    renderer.setSize(w, h)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.0
-    container.appendChild(renderer.domElement)
+      const { renderer, variant } = await createRenderer()
+      onRendererVariantRef.current?.(variant)
+      renderer.setSize(w, h)
+      if ('toneMapping' in renderer) {
+        ;(renderer as WebGLRenderer).toneMapping = ACESFilmicToneMapping
+        ;(renderer as WebGLRenderer).toneMappingExposure = 1.0
+      }
+      container.appendChild(renderer.domElement)
 
     const globe = createGlobe({ radius: 3 })
     globe.position.y = -0.5
@@ -142,9 +150,18 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
       }
 
       renderer.render(scene, camera)
-      animationId = requestAnimationFrame(animate)
     }
-    animate()
+
+    const rAny = renderer as unknown as { setAnimationLoop?: (fn: ((() => void) | null)) => void }
+    if (typeof rAny.setAnimationLoop === 'function') {
+      rAny.setAnimationLoop(animate)
+    } else {
+      const loop = () => {
+        animate()
+        animationId = requestAnimationFrame(loop)
+      }
+      loop()
+    }
 
     const handleResize = () => {
       const w2 = container.clientWidth
@@ -156,7 +173,12 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
     window.addEventListener('resize', handleResize)
 
     return () => {
-      cancelAnimationFrame(animationId)
+      const rAnyCleanup = renderer as unknown as { setAnimationLoop?: (fn: ((() => void) | null)) => void }
+      if (typeof rAnyCleanup.setAnimationLoop === 'function') {
+        rAnyCleanup.setAnimationLoop(null)
+      } else {
+        cancelAnimationFrame(animationId)
+      }
       window.removeEventListener('resize', handleResize)
       controls.dispose()
       renderer.dispose()
@@ -175,6 +197,7 @@ export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }
         container.removeChild(renderer.domElement)
       }
     }
+    })()
   }, [])
 
   return (

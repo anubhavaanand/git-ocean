@@ -20,6 +20,8 @@ import {
   createCoralCluster,
 } from './ocean-helpers'
 import { setupOceanLighting } from './ocean-lighting'
+import { createRenderer } from '@/client/lib/createRenderer'
+import type { RendererVariant } from '@/client/lib/createRenderer'
 
 interface OceanSceneProps {
   className?: string
@@ -28,6 +30,7 @@ interface OceanSceneProps {
     camera: PerspectiveCamera,
     renderer: WebGLRenderer,
   ) => void
+  onRendererVariant?: (variant: RendererVariant) => void
   updatables?: { current: ((time: number) => void)[] }
 }
 
@@ -47,10 +50,12 @@ const CORAL_COLORS = [
   new Color('#ff9ff3'),
 ]
 
-export function OceanScene({ className, onSceneReady, updatables }: OceanSceneProps) {
+export function OceanScene({ className, onSceneReady, onRendererVariant, updatables }: OceanSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
+  const onRendererVariantRef = useRef(onRendererVariant)
+  onRendererVariantRef.current = onRendererVariant
   const updatablesRef = useRef(updatables)
   updatablesRef.current = updatables
 
@@ -58,23 +63,26 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
     const container = containerRef.current
     if (!container) return
 
-    const w = container.clientWidth
-    const h = container.clientHeight
+    ;(async () => {
+      const w = container.clientWidth
+      const h = container.clientHeight
 
-    const scene = new Scene()
-    scene.background = new Color('#0a1628')
+      const scene = new Scene()
+      scene.background = new Color('#0a1628')
 
-    const camera = new PerspectiveCamera(60, w / h, 0.1, 100)
-    camera.position.set(0, -8, 12)
+      const camera = new PerspectiveCamera(60, w / h, 0.1, 100)
+      camera.position.set(0, -8, 12)
 
-    const renderer = new WebGLRenderer({ antialias: true })
-    renderer.setSize(w, h)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = PCFSoftShadowMap
-    renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.0
-    container.appendChild(renderer.domElement)
+      const { renderer, variant } = await createRenderer()
+      onRendererVariantRef.current?.(variant)
+      renderer.setSize(w, h)
+      renderer.shadowMap.enabled = true
+      renderer.shadowMap.type = PCFSoftShadowMap
+      if ('toneMapping' in renderer) {
+        ;(renderer as WebGLRenderer).toneMapping = ACESFilmicToneMapping
+        ;(renderer as WebGLRenderer).toneMappingExposure = 1.0
+      }
+      container.appendChild(renderer.domElement)
 
     createUnderwaterFog(scene, new Color('#0a1628'), 0.035)
     setupOceanLighting(scene)
@@ -131,9 +139,18 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
 
       controls.update()
       renderer.render(scene, camera)
-      animationId = requestAnimationFrame(animate)
     }
-    animate()
+
+    const rAny = renderer as unknown as { setAnimationLoop?: (fn: ((() => void) | null)) => void }
+    if (typeof rAny.setAnimationLoop === 'function') {
+      rAny.setAnimationLoop(animate)
+    } else {
+      const loop = () => {
+        animate()
+        animationId = requestAnimationFrame(loop)
+      }
+      loop()
+    }
 
     const handleResize = () => {
       const w2 = container.clientWidth
@@ -145,7 +162,12 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
     window.addEventListener('resize', handleResize)
 
     return () => {
-      cancelAnimationFrame(animationId)
+      const rAnyCleanup = renderer as unknown as { setAnimationLoop?: (fn: ((() => void) | null)) => void }
+      if (typeof rAnyCleanup.setAnimationLoop === 'function') {
+        rAnyCleanup.setAnimationLoop(null)
+      } else {
+        cancelAnimationFrame(animationId)
+      }
       window.removeEventListener('resize', handleResize)
       controls.dispose()
       renderer.dispose()
@@ -164,6 +186,7 @@ export function OceanScene({ className, onSceneReady, updatables }: OceanScenePr
         container.removeChild(renderer.domElement)
       }
     }
+    })()
   }, [])
 
   return (
