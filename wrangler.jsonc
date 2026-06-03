@@ -1,0 +1,346 @@
+// Cloudflare Workers Configuration
+// Documentation: https://developers.cloudflare.com/workers/configuration/
+{
+  "name": "git-ocean",
+  // IMPORTANT: Remove account_id before committing to public repo
+  // Set via CLOUDFLARE_ACCOUNT_ID env var or wrangler will prompt
+  // "account_id": "your-account-id",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat_v2"],
+
+  // Worker entry point (source file, NOT built file)
+  "main": "./src/server/index.ts",
+
+  // Static Assets Configuration (Workers with Static Assets)
+  // https://developers.cloudflare.com/workers/static-assets/
+  //
+  // ⚠ Cache key is PATH ONLY — `?v=1.2.3` does NOT invalidate. Edge cache
+  //   busts only when the file's bytes change (etag updates automatically)
+  //   or via a CF API purge by URL. Plan asset cache-busting around
+  //   content-hashed filenames, not query strings.
+  "assets": {
+    "directory": "./dist/client",
+    // SPA routing - serve index.html for all non-asset routes
+    "not_found_handling": "single-page-application",
+    // Only these paths invoke the Worker (everything else = FREE static serving)
+    //  - /api/*    — Hono REST routes
+    //  - /agents/* — Durable Object agents SDK WebSocket routing (`routeAgentRequest`)
+    //                Remove this entry if you're not using any DO agents.
+    "run_worker_first": ["/api/*", "/agents/*"]
+  },
+
+  // Cloudflare Bindings
+  // These are automatically typed in .wrangler/types/
+
+  // D1 Database (SQLite at edge)
+  // Create with: wrangler d1 create vite-flare-starter-db
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "git-ocean-db",
+      "database_id": "REPLACE_WITH_YOUR_DATABASE_ID",
+      "migrations_dir": "drizzle"
+    }
+  ],
+
+  // R2 Storage (S3-compatible object storage)
+  // Create with: wrangler r2 bucket create vite-flare-starter-avatars
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "git-ocean-avatars"
+    },
+    {
+      "binding": "FILES",
+      "bucket_name": "git-ocean-files"
+    },
+    {
+      "binding": "SKILLS",
+      "bucket_name": "git-ocean-skills"
+    },
+    {
+      // Data Lake — chunked R2 storage for oversized tool results.
+      // The chat tool adapter spills any tool output that exceeds the
+      // truncation budget (~12K chars) into this bucket and gives the
+      // agent a `data_ref` to read back via read_data / aggregate_data
+      // / export_data. Without this binding the truncation gate still
+      // works, but the agent only sees the preview, not the full data.
+      //
+      // CRITICAL: configure a 1-day lifecycle rule on this bucket so
+      // datasets auto-expire — the agent uses `data_ref` for at most a
+      // single conversation, and the bucket would otherwise grow
+      // unbounded. Run once per fork:
+      //   wrangler r2 bucket lifecycle add vite-flare-starter-data-lake \\
+      //     auto-expire data/ --expire-days 1
+      "binding": "DATA_LAKE",
+      "bucket_name": "git-ocean-data-lake"
+    }
+  ],
+
+  // Vectorize — semantic memory for AutonomousAgent.recallSemantic.
+  // Opt-in: uncomment, then create the index + metadata indexes:
+  //   wrangler vectorize create agent-memory --dimensions=768 --metric=cosine
+  //   wrangler vectorize create-metadata-index agent-memory --property-name=ownerKey --type=string
+  //   wrangler vectorize create-metadata-index agent-memory --property-name=tags --type=string
+  //
+  // CRITICAL — metadata indexes MUST exist BEFORE you insert vectors,
+  // otherwise queries with filter:{ownerKey} return 0 matches even
+  // though the data is there. See .claude/rules/cloudflare-vectorize.md.
+  //
+  // Without this binding, AutonomousAgent.recallSemantic returns []
+  // (default) and agents work without semantic memory.
+  // "vectorize": [
+  //   {
+  //     "binding": "AGENT_MEMORY",
+  //     "index_name": "agent-memory"
+  //   }
+  // ],
+
+  // KV Namespace (key-value storage)
+  // Create with: wrangler kv namespace create CACHE
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "KV",
+  //     "id": "your-kv-id"
+  //   }
+  // ],
+
+  // Workers AI (for AI features)
+  "ai": {
+    "binding": "AI"
+  },
+
+  // Cloudflare Images (resize, crop, format conversion, background removal, face crop)
+  // https://developers.cloudflare.com/images/transform-images/bindings/
+  "images": {
+    "binding": "IMAGES"
+  },
+
+  // Cloudflare Media Transformations (video resize, clip, frame extraction, audio)
+  // https://developers.cloudflare.com/stream/transform-videos/
+  "media": {
+    "binding": "MEDIA"
+  },
+
+  // Vectorize (semantic search, RAG)
+  // Create with: npx wrangler vectorize create vite-flare-starter-vectors --dimensions=768 --metric=cosine
+  // Create metadata indexes BEFORE inserting vectors (not retroactive):
+  //   npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=userId --type=string
+  //   npx wrangler vectorize create-metadata-index vite-flare-starter-vectors --property-name=type --type=string
+  // "vectorize": [
+  //   {
+  //     "binding": "VECTORS",
+  //     "index_name": "vite-flare-starter-vectors"
+  //   }
+  // ],
+
+  // Workflows — durable, step-based fan-out for "do X for each of N items".
+  // Each step.do() is independently retried + survives Worker restarts.
+  // The starter uses one Workflow class for now; add more as needed.
+  // Required for the batch-tasks module (see src/server/modules/batch-tasks/).
+  "workflows": [
+    {
+      "name": "git-ocean-batch-workflow",
+      "binding": "BATCH_WORKFLOW",
+      "class_name": "ProcessBatchWorkflow"
+    }
+  ],
+
+  // Cron Triggers (scheduled tasks)
+  // Runs every 15 minutes:
+  //  - processes due jobs from scheduled_jobs table (agent reminders)
+  //  - cleans up expired better-auth sessions + verification tokens
+  //  - hourly: 30-day backstop for orphaned session rows
+  // The scheduled() handler is wired up in src/server/index.ts.
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
+
+  // Email Sending
+  // ------------
+  // Wrapped by src/server/modules/email/service.ts. Six providers ship
+  // (one file each in src/server/modules/email/providers/), default
+  // priority (first available wins):
+  //
+  //   1. env.EMAIL              — Cloudflare Email Service (beta, paid plan).
+  //                               Onboard domain in dashboard → Compute & AI
+  //                               → Email Service (SPF + DKIM auto on CF DNS).
+  //                               Uncomment the `send_email` block below.
+  //   2. SMTP2GO_API_KEY        — SMTP2Go HTTP. 1k/month free, paid above.
+  //                               Sender domain must be verified in dashboard.
+  //   3. MAILGUN_API_KEY        — Mailgun HTTP. Pay-as-you-go.
+  //   +  MAILGUN_DOMAIN           Required pair. Set MAILGUN_REGION='eu' for EU.
+  //   4. RESEND_API_KEY         — Resend HTTP. 100/day, 3k/month free.
+  //      (or EMAIL_API_KEY)       EMAIL_API_KEY accepted as legacy default.
+  //   5. env.SEND_EMAIL         — Cloudflare Email Routing (legacy, verified
+  //                               destinations only). Needs `mimetext`.
+  //   6. console                — never fails, logs only. Dev fallback.
+  //
+  // Override priority via the EMAIL_PROVIDER_ORDER env (comma-separated
+  // provider ids), e.g. "smtp2go,email-service,resend".
+  //
+  // Set EMAIL_FAILOVER='true' to cascade through providers when one
+  // throws (default: strict — first available wins, errors surface).
+  //
+  // "send_email": [
+  //   { "name": "EMAIL" }
+  //   // OR restrict the sender for defence-in-depth:
+  //   // { "name": "EMAIL", "allowed_sender_addresses": ["noreply@yourdomain.com"] }
+  // ],
+
+  // Durable Objects — stateful, SQLite-backed classes that live longer than
+  // a single request. One instance per `idFromName(name)`. Used for:
+  //  - Voice agents (VoiceInputExample — streams mic + transcribes)
+  //  - Chat rooms, collaborative docs, live dashboards
+  //  - Any per-entity WebSocket session
+  //
+  // Every DO class listed here MUST be exported from the Worker entry
+  // (see `export { VoiceInputExample }` in src/server/index.ts) AND listed
+  // in `migrations.new_sqlite_classes` below so storage is provisioned.
+  //
+  // Routed via `routeAgentRequest` at /agents/{agent-name-kebab-case}/{name}.
+  // See CLAUDE.md → "Pattern 10: Durable Object Agent (voice / streaming WS)".
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VoiceInputExample",
+        "class_name": "VoiceInputExample"
+      },
+      {
+        "name": "VideoInputExample",
+        "class_name": "VideoInputExample"
+      },
+      {
+        // ReminderAgent — worked example of the agents-SDK schedule pattern.
+        // Per-user scheduled work using Agent.schedule() / .retry().
+        // See src/server/modules/scheduled-agents/.
+        "name": "ReminderAgent",
+        "class_name": "ReminderAgent"
+      },
+      {
+        // AssistantAgent — worked example of AutonomousAgent.
+        // Stateful AI assistant per (user, slug) partition. Persona +
+        // memory blocks + tool catalog + schedule. See
+        // src/server/lib/agents/autonomous-agent.ts for the base class
+        // and src/server/modules/autonomous-agents/ for the worked example.
+        "name": "AssistantAgent",
+        "class_name": "AssistantAgent"
+      },
+      {
+        // ResearcherAgent + WriterAgent — multi-agent handoff worked
+        // example. Researcher uses web_search, then delegates prose
+        // composition to Writer via an inline `delegate_to_writer`
+        // tool (agents-as-tools pattern).
+        "name": "ResearcherAgent",
+        "class_name": "ResearcherAgent"
+      },
+      {
+        "name": "WriterAgent",
+        "class_name": "WriterAgent"
+      },
+      {
+        // SweeperAgent — cron-driven entity processing worked example.
+        // Scans entities table for stale items + queues followup
+        // approvals. See src/server/modules/autonomous-agents/sweeper-agent.ts.
+        "name": "SweeperAgent",
+        "class_name": "SweeperAgent"
+      },
+      {
+        // ScratchpadMcpAgent — agent-as-MCP-server worked example.
+        // Per-user persistent scratchpad accessible via Streamable-HTTP
+        // MCP at /mcp/scratchpad/<userId>. External MCP clients (other
+        // Claude Code sessions, Anthropic Workbench) connect and call
+        // get/set/append/clear tools.
+        // **Auth**: this binding is unauthenticated for the demo. Add
+        // OAuth via AgentMcpOAuthProvider before exposing real data.
+        "name": "ScratchpadMcpAgent",
+        "class_name": "ScratchpadMcpAgent"
+      },
+      {
+        // SpaceAgent — multi-user multi-agent room (Spaces feature).
+        // One DO per Space (idFromName(spaceId)). Holds presence +
+        // WebSocket fan-out; all message persistence lives in D1.
+        // See src/server/modules/spaces/space-agent.ts.
+        "name": "SpaceAgent",
+        "class_name": "SpaceAgent"
+      },
+      {
+        // AdminAgent — Claude-Code-style platform management (gh #49).
+        // Per-user. Lives in #admin Space. Calls admin tools (routines,
+        // awareness) all gated by `requestApproval` for write paths.
+        // See src/server/modules/autonomous-agents/admin-agent.ts.
+        "name": "AdminAgent",
+        "class_name": "AdminAgent"
+      },
+      {
+        // ChatAgent — SDK-aligned chat DO via @cloudflare/ai-chat's
+        // AIChatAgent. One DO per (user, conversation) pair, named
+        // `user-{userId}-conv-{conversationId}`. Routed via
+        // routeAgentRequest at /agents/chat-agent/{instance-name}.
+        // See src/server/modules/chat/chat-agent.ts.
+        "name": "ChatAgent",
+        "class_name": "ChatAgent"
+      }
+    ]
+  },
+
+  // Migrations — required to enable SQLite storage on DO classes. Tag is
+  // monotonic ("v1", "v2", ...) — NEVER edit an existing tag after deploy,
+  // add a new one. Include every class in `new_sqlite_classes` the first
+  // time it ships. Subsequent renames/deletes use `renamed_classes` /
+  // `deleted_classes` on a new tag.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["VoiceInputExample"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["VideoInputExample"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["ReminderAgent"]
+    },
+    {
+      "tag": "v4",
+      "new_sqlite_classes": ["AssistantAgent"]
+    },
+    {
+      "tag": "v5",
+      "new_sqlite_classes": ["ResearcherAgent", "WriterAgent"]
+    },
+    {
+      "tag": "v6",
+      "new_sqlite_classes": ["ScratchpadMcpAgent"]
+    },
+    {
+      "tag": "v7",
+      "new_sqlite_classes": ["SweeperAgent"]
+    },
+    {
+      "tag": "v8",
+      "new_sqlite_classes": ["SpaceAgent"]
+    },
+    {
+      "tag": "v9",
+      "new_sqlite_classes": ["AdminAgent"]
+    },
+    {
+      "tag": "v10",
+      "new_sqlite_classes": ["ChatAgent"]
+    }
+  ],
+
+  // Observability
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    }
+  }
+
+  // Build configuration is handled by Vite (vite.config.ts)
+  // Do not set "minify" here - use Vite's build.minify option instead
+}

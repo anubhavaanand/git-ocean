@@ -1,0 +1,69 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Cloudflare
+.wrangler
+.dev.vars
+.mf
+
+# Build outputs
+dist
+.output
+.vercel
+.netlify
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor directories
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+logs
+
+# Testing
+coverage
+.nyc_output
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+tests/e2e/state/
+
+# Temporary files
+*.tmp
+.cache
+
+# Personal session tracking
+SESSION.md
+
+# Playwright CLI session captures (ephemeral page snapshots)
+.playwright-cli/
+.playwright-mcp/
+
+# .jez artifacts — commit markdown, gitignore one-off binaries
+# (UX extract screenshots are kept — they're part of curated references)
+.jez/screenshots/
+.jez/screenshots-audit/
+.jez/audit-evidence/
+# audit-state contains test-auth cookies — sensitive even for *@test.audit.local users
+.jez/audit-state/
+.jez/**/*.{mov,mp4,webm}
+worker-configuration.d.ts
