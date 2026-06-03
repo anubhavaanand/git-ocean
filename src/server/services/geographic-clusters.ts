@@ -34,6 +34,23 @@ export interface LanguageDistrict {
   percentage: number
 }
 
+export interface LanguageColony {
+  name: string
+  language: string
+  terrainType: string
+  visualCharacter: string
+  users: GeocodedUser[]
+  position: { lat: number; lng: number }
+}
+
+export interface ColonyStatistic {
+  colonyName: string
+  language: string
+  totalUsers: number
+  languageDiversityIndex: number
+  averageActivityLevel: number
+}
+
 export function aggregateByCountry(users: GeocodedUser[]): CountryCluster[] {
   const geoUsers = users.map((u) => ({
     user: u,
@@ -160,23 +177,175 @@ export function clusterByCity(users: GeocodedUser[]): CityCluster[] {
     .sort((a, b) => b.userCount - a.userCount)
 }
 
-const LANGUAGE_WEIGHTS = [0.35, 0.25, 0.18, 0.12, 0.10]
+const LANGUAGE_DISTRICT_ORDER = [
+  'JavaScript',
+  'Python',
+  'Java',
+  'TypeScript',
+  'C/C++',
+  'Go',
+  'Rust',
+] as const
 
-export function sortLanguageDistricts(cluster: CityCluster): LanguageDistrict[] {
-  const langs = cluster.topLanguages
-  if (langs.length === 0) return []
+export function sortLanguageDistricts(languageCounts: Map<string, number>): LanguageDistrict[] {
+  const total = Array.from(languageCounts.values()).reduce((sum, count) => sum + count, 0)
+  if (total === 0) return []
 
-  const weights = langs.slice(0, 5).map((name, i) => ({
-    name,
-    percentage: Math.round(LANGUAGE_WEIGHTS[i]! * 100),
-  }))
+  const ordered: { name: string; percentage: number }[] = []
+  let nicheTotal = 0
 
-  const used = weights.reduce((sum, w) => sum + w.percentage, 0)
-  if (used < 100) {
-    weights[weights.length - 1]!.percentage += 100 - used
+  for (const lang of LANGUAGE_DISTRICT_ORDER) {
+    const count = languageCounts.get(lang) ?? 0
+    if (count > 0) {
+      ordered.push({ name: lang, percentage: Math.round((count / total) * 100) })
+    }
   }
 
-  return weights.sort((a, b) => b.percentage - a.percentage)
+  for (const [lang, count] of languageCounts) {
+    if (!(LANGUAGE_DISTRICT_ORDER as readonly string[]).includes(lang)) {
+      nicheTotal += count
+    }
+  }
+
+  if (nicheTotal > 0) {
+    ordered.push({ name: 'Niche', percentage: Math.round((nicheTotal / total) * 100) })
+  }
+
+  const used = ordered.reduce((sum, d) => sum + d.percentage, 0)
+  if (used < 100 && ordered.length > 0) {
+    ordered[ordered.length - 1]!.percentage += 100 - used
+  }
+
+  return ordered
+}
+
+const COLONY_DEFINITIONS: Omit<LanguageColony, 'users'>[] = [
+  {
+    name: 'The Python Trench',
+    language: 'Python',
+    terrainType: 'Wide deep trench',
+    visualCharacter: 'Deep abyssal plain with bioluminescent flora',
+    position: { lat: 0, lng: -30 },
+  },
+  {
+    name: 'The JavaScript Current',
+    language: 'JavaScript',
+    terrainType: 'Fast-moving mid-water current',
+    visualCharacter: 'Swift flowing waters with constant motion',
+    position: { lat: 0, lng: 30 },
+  },
+  {
+    name: 'The Rust Ridge',
+    language: 'Rust',
+    terrainType: 'Sharp dramatic rock formations',
+    visualCharacter: 'Jagged peaks cutting through the ocean surface',
+    position: { lat: 30, lng: 0 },
+  },
+  {
+    name: 'The Go Shelf',
+    language: 'Go',
+    terrainType: 'Clean continental shelf',
+    visualCharacter: 'Well-defined stratified rock layers',
+    position: { lat: -30, lng: 0 },
+  },
+  {
+    name: 'The C++ Abyss',
+    language: 'C++',
+    terrainType: 'Deep ancient geological formation',
+    visualCharacter: 'Subterranean caverns with crystalline structures',
+    position: { lat: 20, lng: 20 },
+  },
+  {
+    name: 'The TypeScript Plateau',
+    language: 'TypeScript',
+    terrainType: 'Elevated structured plateau',
+    visualCharacter: 'Flat elevated terrain with precise geometric contours',
+    position: { lat: -20, lng: -20 },
+  },
+  {
+    name: 'The Ruby Cove',
+    language: 'Ruby',
+    terrainType: 'Warm shallow cove',
+    visualCharacter: 'Sandy beaches with gentle warm currents',
+    position: { lat: 10, lng: -40 },
+  },
+]
+
+const OTHER_POSITIONS = [
+  { lat: -10, lng: 50 },
+  { lat: 15, lng: -60 },
+  { lat: -25, lng: 70 },
+  { lat: 40, lng: -50 },
+  { lat: -35, lng: -10 },
+]
+
+export function getLanguageColonies(unlocatedUsers: GeocodedUser[]): LanguageColony[] {
+  const colonyMap = new Map<string, GeocodedUser[]>()
+
+  for (const user of unlocatedUsers) {
+    const langs = user.languages ?? []
+    const primaryLang = langs[0] ?? 'Other'
+
+    const existing = colonyMap.get(primaryLang)
+    if (existing) {
+      existing.push(user)
+    } else {
+      colonyMap.set(primaryLang, [user])
+    }
+  }
+
+  const colonies: LanguageColony[] = []
+
+  let otherIndex = 0
+
+  for (const [lang, users] of colonyMap) {
+    const def = COLONY_DEFINITIONS.find((d) => d.language === lang)
+    if (def) {
+      colonies.push({
+        ...def,
+        users,
+      })
+    } else {
+      const posIndex = otherIndex < OTHER_POSITIONS.length ? otherIndex : 0
+      colonies.push({
+        name: `The ${lang} Expanse`,
+        language: lang,
+        terrainType: 'Various',
+        visualCharacter: 'Uncharted waters',
+        users,
+        position: OTHER_POSITIONS[posIndex]!,
+      })
+      otherIndex++
+    }
+  }
+
+  return colonies.sort((a, b) => b.users.length - a.users.length)
+}
+
+export function getColonyStatistics(colonies: LanguageColony[]): ColonyStatistic[] {
+  return colonies.map((colony) => {
+    const allLangs = new Set<string>()
+    let totalRepoCount = 0
+
+    for (const user of colony.users) {
+      for (const lang of user.languages ?? []) {
+        allLangs.add(lang)
+      }
+      totalRepoCount += user.repoCount
+    }
+
+    const totalUsers = colony.users.length
+    const languageDiversityIndex = totalUsers > 0 ? allLangs.size / totalUsers : 0
+    const averageActivityLevel = totalUsers > 0 ? totalRepoCount / totalUsers : 0
+
+    return {
+      colonyName: colony.name,
+      language: colony.language,
+      totalUsers,
+      languageDiversityIndex: Math.round(languageDiversityIndex * 100) / 100,
+      averageActivityLevel: Math.round(averageActivityLevel * 100) / 100,
+    }
+  })
 }
 
 export function getUnlocatedUsers(users: GeocodedUser[]): GeocodedUser[] {

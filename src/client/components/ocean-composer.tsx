@@ -111,7 +111,12 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
         )
 
         const height = Math.max(1.5, Math.min(repo.stars / 15, 6))
-        const tower = createKelpTower(height, color, pos)
+        const tower = createKelpTower({
+          height,
+          frondDensity: Math.min(repo.forks / 10, 1),
+          color,
+          position: pos,
+        })
         scene.add(tower)
 
         const size = 0.5 + Math.min(repo.stars / 100, 0.8)
