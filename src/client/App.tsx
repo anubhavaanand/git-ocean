@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ScrollToTop } from './components/shared/ScrollToTop'
 import { ErrorBoundary } from './components/shared/ErrorBoundary'
+import { SceneErrorBoundary } from './components/shared/SceneErrorFallback'
 import { createErrorHandler } from './lib/error-reporting'
 import { ProtectedRoute } from './components/shared/ProtectedRoute'
 import { PublicOnlyRoute } from './components/shared/PublicOnlyRoute'
@@ -147,8 +148,8 @@ function App() {
           </Route>
 
           {/* Git Ocean routes — 3D underwater GitHub visualization */}
-          <Route path="/ocean" element={<OceanPage />} />
-          <Route path="/world" element={<WorldMapPage />} />
+          <Route path="/ocean" element={<SceneErrorBoundary sceneName="Ocean"><OceanPage /></SceneErrorBoundary>} />
+          <Route path="/world" element={<SceneErrorBoundary sceneName="World Map"><WorldMapPage /></SceneErrorBoundary>} />
           <Route path="/dashboard" element={<GitDashboardPage />} />
           <Route path="/settings" element={<GitSettingsPage />} />
 
