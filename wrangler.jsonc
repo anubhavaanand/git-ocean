@@ -96,14 +96,16 @@
   //   }
   // ],
 
-  // KV Namespace (key-value storage)
-  // Create with: wrangler kv namespace create CACHE
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "KV",
-  //     "id": "your-kv-id"
-  //   }
-  // ],
+  // KV Namespace — GitHub API response cache (rate-limit mitigation)
+  // Create with: wrangler kv namespace create GITHUB_CACHE
+  // Preview: wrangler kv namespace create GITHUB_CACHE --preview
+  // Then copy the ID below. Local dev uses an in-memory mock automatically.
+  "kv_namespaces": [
+    {
+      "binding": "GITHUB_CACHE",
+      "id": "local-dev-mock"
+    }
+  ],
 
   // Workers AI (for AI features)
   "ai": {

@@ -10,13 +10,15 @@ import {
   repositories,
 } from '@/server/db/git-ocean-schema'
 import {
-  fetchUserProfile,
-  fetchUserRepos,
-  fetchRepoDetails,
   exchangeOAuthCode,
   decryptToken,
   encryptToken,
 } from '@/server/services/github-api'
+import {
+  fetchUserProfile,
+  fetchUserRepos,
+  fetchRepoDetails,
+} from '@/server/services/github-cache'
 
 const app = new Hono<AuthContext>()
 
@@ -266,10 +268,10 @@ app.get('/profile', async (c) => {
   }
 
   try {
-    const { profile, rateLimit } = await fetchUserProfile(token)
+    const { profile, rateLimit, cachedAt } = await fetchUserProfile(token, c.env.GITHUB_CACHE)
     return c.json({
       profile,
-      cachedAt: connection.updatedAt?.toISOString() ?? null,
+      cachedAt: cachedAt ?? null,
       rateLimit,
     })
   } catch (err) {
@@ -304,8 +306,8 @@ app.get('/repos', async (c) => {
   }
 
   try {
-    const { repos, rateLimit } = await fetchUserRepos(token)
-    return c.json({ repos, rateLimit })
+    const { repos, rateLimit, cachedAt } = await fetchUserRepos(token, c.env.GITHUB_CACHE)
+    return c.json({ repos, rateLimit, cachedAt: cachedAt ?? null })
   } catch (err) {
     return c.json(
       { error: err instanceof Error ? err.message : 'Failed to fetch GitHub repos' },
@@ -344,8 +346,8 @@ app.get('/repos/:owner/:repo', zValidator('param', repoParamsSchema), async (c) 
   }
 
   try {
-    const { details, rateLimit } = await fetchRepoDetails(token, owner, repo)
-    return c.json({ details, rateLimit })
+    const { details, rateLimit, cachedAt } = await fetchRepoDetails(token, owner, repo, c.env.GITHUB_CACHE)
+    return c.json({ details, rateLimit, cachedAt: cachedAt ?? null })
   } catch (err) {
     return c.json(
       { error: err instanceof Error ? err.message : 'Failed to fetch repo details' },

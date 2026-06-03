@@ -131,6 +131,9 @@ export interface Env {
   GOOGLE_CLIENT_ID?: string
   GOOGLE_CLIENT_SECRET?: string
 
+  // KV — GitHub API response cache (rate-limit mitigation)
+  GITHUB_CACHE?: KVNamespace
+
   // GitHub OAuth
   GITHUB_CLIENT_ID?: string
   GITHUB_CLIENT_SECRET?: string
