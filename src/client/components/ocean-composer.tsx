@@ -10,6 +10,7 @@ import {
   type CreatureConfig,
   type CreatureType,
 } from './creature-factory'
+import { useOrbitalWorker } from '@/client/lib/useOrbitalWorker'
 import type { GitHubRepoData } from '@/client/hooks/use-ocean-data'
 
 interface OceanComposerProps {
@@ -93,6 +94,7 @@ function repoToCreatureType(repo: GitHubRepoData): CreatureType {
 export function OceanComposer({ repoData, className }: OceanComposerProps) {
   const updatablesRef = useRef<((time: number) => void)[]>([])
   const SWARM_TYPES: CreatureType[] = ['jellyfish', 'barracuda', 'dolphin']
+  const { positionsRef, init: initWorker, requestFrame, stop: stopWorker } = useOrbitalWorker()
 
   const handleSceneReady = useCallback(
     (scene: Scene) => {
@@ -182,28 +184,48 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
         }
       })
 
+      const whaleConfigs = whales.map((_, i) => {
+        const repo = repoData[i]
+        const h = Math.max(1.5, Math.min((repo?.stars ?? 0) / 15, 6))
+        return {
+          id: i,
+          orbitRadius: 1.5 + h * 0.15,
+          speed: 0.3 + i * 0.2,
+          scale: 0.5 + Math.min((repo?.stars ?? 0) / 100, 0.8),
+        }
+      })
+      initWorker(whaleConfigs, [])
+
       updatablesRef.current.push((time: number) => {
+        requestFrame(time)
+        const { whales: whalePositions } = positionsRef.current
+
         for (let i = 0; i < whales.length; i++) {
           const whale = whales[i]
           if (!whale) continue
-          const repo = repoData[i]
-          if (!repo) continue
+          const pos = whalePositions.get(i)
+          if (pos) {
+            whale.position.set(pos.x, pos.y, pos.z)
+            whale.rotation.y = pos.rotationY
+          }
 
-          const h = Math.max(1.5, Math.min(repo.stars / 15, 6))
-          const r = 1.5 + h * 0.15
-          const s = 0.3 + i * 0.2
-          whale.updatePosition(time, r, s)
+          whale.children.forEach((child) => {
+            if (typeof child.userData['update'] === 'function') {
+              child.userData['update'](time)
+            }
+          })
         }
       })
     },
-    [repoData],
+    [repoData, initWorker, requestFrame, positionsRef],
   )
 
   useEffect(() => {
     return () => {
       updatablesRef.current = []
+      stopWorker()
     }
-  }, [])
+  }, [stopWorker])
 
   return (
     <OceanScene
