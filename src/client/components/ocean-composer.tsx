@@ -26,6 +26,7 @@ const WHALE_COLORS = ['#06B6D4', '#0d9488', '#0891b2', '#14b8a6', '#67e8f9']
 const DIALECTS = ['northern', 'southern', 'eastern', 'western', 'deep']
 
 const CREATURE_COLORS: Record<CreatureType, string> = {
+  // LEGACY
   dolphin: '#22d3ee',
   jellyfish: '#c084fc',
   turtle: '#34d399',
@@ -36,6 +37,49 @@ const CREATURE_COLORS: Record<CreatureType, string> = {
   crab: '#ef4444',
   anglerfish: '#1a1a2e',
   starfish: '#f59e0b',
+  // GROUP 1 — BUILDERS
+  'bottlenose-dolphin': '#22d3ee',
+  'spinner-dolphin': '#06b6d4',
+  sailfish: '#3b82f6',
+  'bluefin-tuna': '#2563eb',
+  cuttlefish: '#a78bfa',
+  'krill-swarm': '#f97316',
+  swordfish: '#6366f1',
+  'herring-school': '#94a3b8',
+  // GROUP 2 — ADMIRERS
+  'moon-jellyfish': '#c084fc',
+  'lions-mane-jellyfish': '#f59e0b',
+  dinoflagellates: '#10b981',
+  'sea-sparkle': '#06b6d4',
+  salps: '#e2e8f0',
+  copepods: '#84cc16',
+  // GROUP 3 — OFFSPRING
+  'whale-calf': '#14b8a6',
+  'hammerhead-school': '#64748b',
+  'flying-fish': '#a3e635',
+  'amphipod-surge': '#f97316',
+  // GROUP 4 — PROBLEMS
+  'giant-pacific-octopus': '#fb923c',
+  lionfish: '#ef4444',
+  'moray-eel': '#65a30d',
+  'mantis-shrimp': '#ec4899',
+  'arrow-worms': '#94a3b8',
+  'decorator-crab': '#ef4444',
+  'giant-squid': '#dc2626',
+  // GROUP 5 — RESOLUTIONS
+  'leatherback-turtle': '#34d399',
+  'green-sea-turtle': '#10b981',
+  nautilus: '#f8fafc',
+  'cleaner-wrasse': '#06b6d4',
+  'basking-shark': '#475569',
+  // AMBIENT WORLD LIFE
+  'pilot-fish': '#64748b',
+  'comb-jellyfish': '#a78bfa',
+  viperfish: '#1e293b',
+  'telescope-octopus': '#8b5cf6',
+  'giant-isopod': '#d97706',
+  'whale-fall-ecosystem': '#78716c',
+  'firefly-squid': '#06b6d4',
 }
 
 function repoToCreatureType(repo: GitHubRepoData): CreatureType {
@@ -91,6 +135,10 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
           count: Math.min(3 + Math.floor(repo.forks / 5), 8),
           orbitRadius: 1.2 + Math.random() * 0.5,
           orbitSpeed: 0.5 + Math.random() * 0.5,
+          trophicLevel: Math.min(repo.stars / 100, 5),
+          inclination: (Math.random() - 0.5) * 0.3,
+          eccentricity: Math.random() * 0.2,
+          orbitalGroup: Math.floor(Math.random() * 6),
         }
 
         if (creatureConfig.count >= 2 && SWARM_TYPES.includes(creatureType)) {
