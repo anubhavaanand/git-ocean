@@ -65,6 +65,7 @@ import globalSearchRoutes from './modules/spaces/global-search'
 import batchJobsRoutes from './modules/batch-tasks/routes'
 import oceanRoutes from './routes/ocean'
 import githubRoutes from './routes/github'
+import geographyRoutes from './routes/geography'
 import { routeAgentRequest } from 'agents'
 import { ScratchpadMcpAgent } from './modules/mcp-agents/scratchpad-mcp-agent'
 // Re-export DO class(es) so wrangler migrations can locate them. Every DO
@@ -373,6 +374,7 @@ app.route('/api/connectors', connectorsRoutes)
 // Git Ocean routes
 app.route('/api/ocean', oceanRoutes)
 app.route('/api/github', githubRoutes)
+app.route('/api/geography', geographyRoutes)
 
 // =============================================================================
 // AI TEST ENDPOINT

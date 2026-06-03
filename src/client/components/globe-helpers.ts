@@ -251,3 +251,208 @@ export function createCountryOutline(
   })
   return new THREE.Line(geo, mat)
 }
+
+export function createSonarObelisk(
+  position: THREE.Vector3,
+  height: number = 1.2,
+  color: string = '#06B6D4',
+) {
+  const group = new THREE.Group()
+  group.position.copy(position)
+
+  const pillarGeo = new THREE.CylinderGeometry(0.04, 0.08, height, 6)
+  const pillarMat = new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.7,
+  })
+  const pillar = new THREE.Mesh(pillarGeo, pillarMat)
+  pillar.position.y = height / 2
+  group.add(pillar)
+
+  for (let i = 0; i < 3; i++) {
+    const ringGeo = new THREE.TorusGeometry(0.08 + i * 0.06, 0.01, 6, 12)
+    const ringMat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.4 - i * 0.1,
+    })
+    const ring = new THREE.Mesh(ringGeo, ringMat)
+    ring.position.y = height * (0.3 + i * 0.25)
+    ring.rotation.x = Math.PI / 2
+    group.add(ring)
+  }
+
+  const tipGeo = new THREE.SphereGeometry(0.06, 8, 8)
+  const tipMat = new THREE.MeshBasicMaterial({
+    color: '#ffffff',
+    transparent: true,
+    opacity: 0.9,
+  })
+  const tip = new THREE.Mesh(tipGeo, tipMat)
+  tip.position.y = height
+  group.add(tip)
+
+  const glowCanvas = document.createElement('canvas')
+  glowCanvas.width = 64
+  glowCanvas.height = 64
+  const ctx = glowCanvas.getContext('2d')!
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
+  grad.addColorStop(0, '#ffffff')
+  grad.addColorStop(0.2, color)
+  grad.addColorStop(1, 'transparent')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, 64, 64)
+
+  const glowMap = new THREE.CanvasTexture(glowCanvas)
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowMap,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+  })
+  const glow = new THREE.Sprite(glowMat)
+  glow.scale.set(0.8, 0.8, 1)
+  glow.position.y = height * 0.5
+  group.add(glow)
+
+  return group
+}
+
+export function createLanguageRing(
+  center: THREE.Vector3,
+  languages: { name: string; percentage: number }[],
+  radius: number = 0.4,
+) {
+  const group = new THREE.Group()
+  group.position.copy(center)
+
+  const languageColors: Record<string, string> = {
+    JavaScript: '#f7df1e',
+    TypeScript: '#3178c6',
+    Python: '#3776ab',
+    Java: '#b07219',
+    Go: '#00add8',
+    Rust: '#dea584',
+    'C++': '#00599c',
+    'C#': '#178600',
+    Ruby: '#cc342d',
+    PHP: '#777bb4',
+    Kotlin: '#a97bff',
+    Scala: '#dc322f',
+    Swift: '#ffac45',
+    Dart: '#00b4ab',
+    Lua: '#000080',
+  }
+
+  let startAngle = 0
+  for (const lang of languages) {
+    if (lang.percentage <= 0) continue
+    const arcAngle = (lang.percentage / 100) * Math.PI * 2
+    const color = languageColors[lang.name] ?? '#06B6D4'
+
+    const segments = Math.max(8, Math.floor(arcAngle * 20))
+    const positions: number[] = []
+    for (let i = 0; i <= segments; i++) {
+      const a = startAngle + (i / segments) * arcAngle
+      const x = radius * Math.cos(a)
+      const z = radius * Math.sin(a)
+      positions.push(x, 0, z)
+    }
+
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    const mat = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.6,
+    })
+    const arc = new THREE.Line(geo, mat)
+    group.add(arc)
+
+    startAngle += arcAngle
+  }
+
+  return group
+}
+
+export function createOceanColony(
+  position: THREE.Vector3,
+  _colonyId: number = 0,
+) {
+  const group = new THREE.Group()
+  group.position.copy(position)
+
+  const count = 3 + Math.floor(Math.random() * 5)
+  for (let i = 0; i < count; i++) {
+    const size = 0.02 + Math.random() * 0.04
+    const geo = new THREE.SphereGeometry(size, 6, 6)
+    const mat = new THREE.MeshBasicMaterial({
+      color: '#0EA5E9',
+      transparent: true,
+      opacity: 0.3 + Math.random() * 0.4,
+    })
+    const dot = new THREE.Mesh(geo, mat)
+    dot.position.set(
+      (Math.random() - 0.5) * 0.3,
+      (Math.random() - 0.5) * 0.3,
+      (Math.random() - 0.5) * 0.3,
+    )
+    group.add(dot)
+  }
+
+  const colonyCanvas = document.createElement('canvas')
+  colonyCanvas.width = 32
+  colonyCanvas.height = 32
+  const ctx = colonyCanvas.getContext('2d')!
+  const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16)
+  grad.addColorStop(0, '#0EA5E9')
+  grad.addColorStop(0.5, '#06B6D4')
+  grad.addColorStop(1, 'transparent')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, 32, 32)
+
+  const glowMap = new THREE.CanvasTexture(colonyCanvas)
+  const glowMat = new THREE.SpriteMaterial({
+    map: glowMap,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+  })
+  const glow = new THREE.Sprite(glowMat)
+  glow.scale.set(0.3, 0.3, 1)
+  group.add(glow)
+
+  return group
+}
+
+export type ZoomLevel = 'world' | 'continent' | 'country' | 'city' | 'detail'
+
+export interface ZoomConfig {
+  level: ZoomLevel
+  distance: number
+  label: string
+}
+
+export const ZOOM_LEVELS: ZoomConfig[] = [
+  { level: 'world', distance: 10, label: 'World View' },
+  { level: 'continent', distance: 7, label: 'Continent View' },
+  { level: 'country', distance: 4.5, label: 'Country View' },
+  { level: 'city', distance: 3, label: 'City View' },
+  { level: 'detail', distance: 2, label: 'Detail View' },
+]
+
+export function getZoomLevel(distance: number): ZoomLevel {
+  if (distance > 8.5) return 'world'
+  if (distance > 5.75) return 'continent'
+  if (distance > 3.75) return 'country'
+  if (distance > 2.5) return 'city'
+  return 'detail'
+}
+
+export function clampToZoomLevel(distance: number): number {
+  const levels = ZOOM_LEVELS.map((z) => z.distance)
+  return levels.reduce((prev, curr) =>
+    Math.abs(curr - distance) < Math.abs(prev - distance) ? curr : prev,
+  )
+}

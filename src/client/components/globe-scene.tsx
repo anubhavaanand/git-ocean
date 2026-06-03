@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { createGlobe, createAtmosphere, createCloudLayer } from './globe-helpers'
+import { createGlobe, createAtmosphere, createCloudLayer, getZoomLevel } from './globe-helpers'
+
+export type { ZoomLevel } from './globe-helpers'
 
 interface GlobeSceneProps {
   className?: string
@@ -11,9 +13,10 @@ interface GlobeSceneProps {
     renderer: THREE.WebGLRenderer,
   ) => void
   updatables?: { current: ((time: number) => void)[] }
+  onZoomChange?: (level: string, distance: number) => void
 }
 
-export function GlobeScene({ className, onSceneReady, updatables }: GlobeSceneProps) {
+export function GlobeScene({ className, onSceneReady, updatables, onZoomChange }: GlobeSceneProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const onSceneReadyRef = useRef(onSceneReady)
   onSceneReadyRef.current = onSceneReady
@@ -22,6 +25,8 @@ export function GlobeScene({ className, onSceneReady, updatables }: GlobeScenePr
   const globeGroupRef = useRef<THREE.Group | null>(null)
   const atmosphereRef = useRef<THREE.Mesh | null>(null)
   const cloudRef = useRef<THREE.Group | null>(null)
+  const onZoomChangeRef = useRef(onZoomChange)
+  onZoomChangeRef.current = onZoomChange
 
   useEffect(() => {
     const container = containerRef.current
@@ -68,6 +73,9 @@ export function GlobeScene({ className, onSceneReady, updatables }: GlobeScenePr
     controls.target.set(0, -0.5, 0)
     controls.update()
 
+    let lastZoomLevel = getZoomLevel(controls.object.position.distanceTo(controls.target))
+    onZoomChangeRef.current?.(lastZoomLevel, controls.object.position.distanceTo(controls.target))
+
     const ambientLight = new THREE.AmbientLight(0x1a2a4a, 0.5)
     scene.add(ambientLight)
 
@@ -112,6 +120,14 @@ export function GlobeScene({ className, onSceneReady, updatables }: GlobeScenePr
       }
 
       controls.update()
+
+      const dist = controls.object.position.distanceTo(controls.target)
+      const currentZoom = getZoomLevel(dist)
+      if (currentZoom !== lastZoomLevel) {
+        lastZoomLevel = currentZoom
+        onZoomChangeRef.current?.(currentZoom, dist)
+      }
+
       renderer.render(scene, camera)
       animationId = requestAnimationFrame(animate)
     }
