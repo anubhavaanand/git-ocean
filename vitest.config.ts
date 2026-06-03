@@ -5,6 +5,7 @@ import path from 'node:path'
 export default defineConfig({
   plugins: [
     cloudflareTest({
+      remoteBindings: false,
       wrangler: {
         configPath: './wrangler.jsonc',
       },
