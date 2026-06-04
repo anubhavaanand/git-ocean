@@ -2103,16 +2103,14 @@ function getCreatureParts(
 }
 
 export function createInstancedSwarm(
-  creatureType: CreatureType,
-  count: number,
-  size: number,
-  color: string,
+  config: CreatureConfig
 ): InstancedSwarm {
-  const parts = getCreatureParts(creatureType, size, color)
+  const parts = getCreatureParts(config.type, config.size, config.color)
   if (!parts || parts.length === 0) {
-    throw new Error(`Cannot create instanced swarm for creature type: ${creatureType}`)
+    throw new Error(`Cannot create instanced swarm for creature type: ${config.type}`)
   }
 
+  const count = config.count
   const meshes: THREE.InstancedMesh[] = parts.map((part) => {
     const material = Array.isArray(part.material)
       ? part.material.map((m) => m.clone())

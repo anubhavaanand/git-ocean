@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Scene, Vector3, Euler, LOD } from 'three'
+import { Scene, Vector3, LOD } from 'three'
 import { OceanScene } from './ocean-scene'
 import { createOceanFloor } from './ocean-floor'
 import { createKelpTower } from './kelp-tower'
