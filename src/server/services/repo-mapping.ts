@@ -41,8 +41,27 @@ export interface OceanAggregate {
   communityHealthAvg: number
 }
 
+const ORBITAL_PARAMS = {
+  1: { radius: 8, inclination: 5, eccentricity: 0.1, speedMultiplier: 2.0 },
+  2: { radius: 30, inclination: 70, eccentricity: 0.1, speedMultiplier: 0.3 },
+  3: { radius: 22, inclination: 50, eccentricity: 0.4, speedMultiplier: 0.8 },
+  4: { radius: 14, inclination: 35, eccentricity: 0.6, speedMultiplier: 1.4 },
+  5: { radius: 18, inclination: 15, eccentricity: 0.2, speedMultiplier: 0.6 },
+} as const
+
+function getOrbitalParams(group: 1 | 2 | 3 | 4 | 5, openIssuesCount: number) {
+  const params = ORBITAL_PARAMS[group]
+  return {
+    orbitRadius: params.radius,
+    inclination: params.inclination,
+    orbitSpeed: params.speedMultiplier,
+    eccentricity: Math.min(0.9, params.eccentricity + (openIssuesCount / 100) * 0.3),
+  }
+}
+
 export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction[] {
   const instructions: CreatureInstruction[] = []
+  const openIssuesCount = repo.open_issues_count ?? 0
 
   const codeFrequencyAdditions = (repo.code_frequency ?? []).reduce((sum, entry) => sum + Math.max(0, entry.additions), 0)
   const commitStreak = (repo.commit_activity_weekly ?? []).slice(-8).some(v => v > 0) ? 1 : 0
@@ -62,7 +81,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'bottlenose-dolphin', count: dolphinCount,
       scaleX: 1, scaleY: 1, scaleZ: 1, level: 3, trophicLevel: 1,
-      orbitRadius: 1.5, orbitSpeed: 1.5, inclination: 10, eccentricity: 0.1,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L1',
     })
   }
@@ -72,7 +91,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'spinner-dolphin', count: spinnerCount,
       scaleX: 1, scaleY: 1, scaleZ: 1, level: 2, trophicLevel: 2,
-      orbitRadius: 1.8, orbitSpeed: 1.3, inclination: 10, eccentricity: 0.2,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L2',
     })
   }
@@ -81,7 +100,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'sailfish', count: 1,
       scaleX: 1.2, scaleY: 1.2, scaleZ: 1.2, level: 2, trophicLevel: 1,
-      orbitRadius: 1.6, orbitSpeed: 2.0, inclination: 10, eccentricity: 0.15,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L1',
     })
   }
@@ -91,7 +110,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'bluefin-tuna', count: tunaCount,
       scaleX: 1, scaleY: 1, scaleZ: 1, level: 2, trophicLevel: 2,
-      orbitRadius: 2.0, orbitSpeed: 1.1, inclination: 10, eccentricity: 0.2,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L2',
     })
   }
@@ -101,7 +120,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'cuttlefish', count: 1,
       scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8, level: 1, trophicLevel: 2,
-      orbitRadius: 1.7, orbitSpeed: 1.2, inclination: 10, eccentricity: 0.1,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L2',
     })
   }
@@ -111,7 +130,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'krill-swarm', count: krillCount,
       scaleX: 0.5, scaleY: 0.5, scaleZ: 0.5, level: 2, trophicLevel: 1,
-      orbitRadius: 2.5, orbitSpeed: 1.4, inclination: 10, eccentricity: 0.3,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L1',
     })
   }
@@ -121,7 +140,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'swordfish', count: swordfishCount,
       scaleX: 1.1, scaleY: 1.1, scaleZ: 1.1, level: 2, trophicLevel: 2,
-      orbitRadius: 2.2, orbitSpeed: 1.8, inclination: 10, eccentricity: 0.2,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L2',
     })
   }
@@ -131,7 +150,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'herring-school', count: herringCount,
       scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6, level: 2, trophicLevel: 2,
-      orbitRadius: 2.3, orbitSpeed: 1.0, inclination: 10, eccentricity: 0.15,
+      ...getOrbitalParams(1, openIssuesCount),
       orbitalGroup: 1, dataAccessLevel: 'L2',
     })
   }
@@ -143,7 +162,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'moon-jellyfish', count: moonJellyfishCount,
       scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8, level: 2, trophicLevel: 1,
-      orbitRadius: 4.0, orbitSpeed: 0.4, inclination: 30, eccentricity: 0.05,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L1',
     })
   }
@@ -153,7 +172,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'lions-mane-jellyfish', count: lionsManeCount,
       scaleX: 1.3, scaleY: 1.3, scaleZ: 1.3, level: 2, trophicLevel: 1,
-      orbitRadius: 4.5, orbitSpeed: 0.3, inclination: 30, eccentricity: 0.05,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L1',
     })
   }
@@ -163,7 +182,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'dinoflagellates', count: dinoCount,
       scaleX: 0.3, scaleY: 0.3, scaleZ: 0.3, level: 1, trophicLevel: 1,
-      orbitRadius: 5.0, orbitSpeed: 0.2, inclination: 30, eccentricity: 0.05,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L1',
     })
   }
@@ -173,7 +192,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'sea-sparkle', count: 1,
       scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6, level: 4, trophicLevel: 1,
-      orbitRadius: 5.5, orbitSpeed: 0.25, inclination: 30, eccentricity: 0.02,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L1',
     })
   }
@@ -183,7 +202,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'salps', count: 1,
       scaleX: 0.7, scaleY: 0.7, scaleZ: 0.7, level: 1, trophicLevel: 1,
-      orbitRadius: 4.8, orbitSpeed: 0.2, inclination: 30, eccentricity: 0.05,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L1',
     })
   }
@@ -193,7 +212,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'copepods', count: copepodCount,
       scaleX: 0.3, scaleY: 0.3, scaleZ: 0.3, level: 1, trophicLevel: 3,
-      orbitRadius: 6.0, orbitSpeed: 0.3, inclination: 30, eccentricity: 0.08,
+      ...getOrbitalParams(2, openIssuesCount),
       orbitalGroup: 2, dataAccessLevel: 'L3',
     })
   }
@@ -205,7 +224,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'whale-calf', count: whaleCalfCount,
       scaleX: 1.5, scaleY: 1.5, scaleZ: 1.5, level: 4, trophicLevel: 1,
-      orbitRadius: 2.5, orbitSpeed: 0.8, inclination: 15, eccentricity: 0.4,
+      ...getOrbitalParams(3, openIssuesCount),
       orbitalGroup: 3, dataAccessLevel: 'L1',
     })
   }
@@ -215,7 +234,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'manta-ray', count: mantaCount,
       scaleX: 1.2, scaleY: 1.2, scaleZ: 1.2, level: 4, trophicLevel: 1,
-      orbitRadius: 3.0, orbitSpeed: 0.7, inclination: 15, eccentricity: 0.35,
+      ...getOrbitalParams(3, openIssuesCount),
       orbitalGroup: 3, dataAccessLevel: 'L1',
     })
   }
@@ -225,7 +244,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'hammerhead-school', count: hammerheadCount,
       scaleX: 0.9, scaleY: 0.9, scaleZ: 0.9, level: 2, trophicLevel: 1,
-      orbitRadius: 3.5, orbitSpeed: 0.6, inclination: 15, eccentricity: 0.4,
+      ...getOrbitalParams(3, openIssuesCount),
       orbitalGroup: 3, dataAccessLevel: 'L1',
     })
   }
@@ -235,7 +254,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'flying-fish', count: flyingFishCount,
       scaleX: 0.7, scaleY: 0.7, scaleZ: 0.7, level: 2, trophicLevel: 1,
-      orbitRadius: 4.0, orbitSpeed: 0.8, inclination: 15, eccentricity: 0.45,
+      ...getOrbitalParams(3, openIssuesCount),
       orbitalGroup: 3, dataAccessLevel: 'L1',
     })
   }
@@ -245,7 +264,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'amphipod-surge', count: amphipodCount,
       scaleX: 0.4, scaleY: 0.4, scaleZ: 0.4, level: 1, trophicLevel: 3,
-      orbitRadius: 2.8, orbitSpeed: 0.9, inclination: 15, eccentricity: 0.5,
+      ...getOrbitalParams(3, openIssuesCount),
       orbitalGroup: 3, dataAccessLevel: 'L3',
     })
   }
@@ -257,7 +276,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'barracuda', count: barracudaCount,
       scaleX: 0.7, scaleY: 0.7, scaleZ: 0.7, level: 1, trophicLevel: 1,
-      orbitRadius: 2.0, orbitSpeed: 1.2, inclination: 20, eccentricity: 0.6,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L1',
     })
   }
@@ -267,7 +286,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'giant-pacific-octopus', count: octopusCount,
       scaleX: 1.2, scaleY: 1.2, scaleZ: 1.2, level: 3, trophicLevel: 2,
-      orbitRadius: 2.2, orbitSpeed: 1.0, inclination: 20, eccentricity: 0.6,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L2',
     })
   }
@@ -277,7 +296,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'lionfish', count: lionfishCount,
       scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8, level: 3, trophicLevel: 3,
-      orbitRadius: 2.5, orbitSpeed: 0.8, inclination: 20, eccentricity: 0.7,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L3',
     })
   }
@@ -287,7 +306,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'moray-eel', count: morayCount,
       scaleX: 0.9, scaleY: 0.9, scaleZ: 0.9, level: 2, trophicLevel: 3,
-      orbitRadius: 2.3, orbitSpeed: 0.9, inclination: 20, eccentricity: 0.65,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L3',
     })
   }
@@ -297,7 +316,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'mantis-shrimp', count: mantisShrimpCount,
       scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6, level: 2, trophicLevel: 2,
-      orbitRadius: 1.8, orbitSpeed: 1.5, inclination: 20, eccentricity: 0.7,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L2',
     })
   }
@@ -307,7 +326,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'arrow-worms', count: arrowWormCount,
       scaleX: 0.4, scaleY: 0.4, scaleZ: 0.4, level: 1, trophicLevel: 1,
-      orbitRadius: 2.5, orbitSpeed: 1.1, inclination: 20, eccentricity: 0.7,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L1',
     })
   }
@@ -317,7 +336,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'decorator-crab', count: decoratorCrabCount,
       scaleX: 0.5, scaleY: 0.5, scaleZ: 0.5, level: 1, trophicLevel: 2,
-      orbitRadius: 3.0, orbitSpeed: 0.3, inclination: 20, eccentricity: 0.8,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L2',
     })
   }
@@ -327,7 +346,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'giant-squid', count: giantSquidCount,
       scaleX: 1.5, scaleY: 1.5, scaleZ: 1.5, level: 5, trophicLevel: 2,
-      orbitRadius: 3.5, orbitSpeed: 0.5, inclination: 20, eccentricity: 0.65,
+      ...getOrbitalParams(4, openIssuesCount),
       orbitalGroup: 4, dataAccessLevel: 'L2',
     })
   }
@@ -339,7 +358,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'leatherback-turtle', count: leatherbackCount,
       scaleX: 1.2, scaleY: 1.2, scaleZ: 1.2, level: 3, trophicLevel: 2,
-      orbitRadius: 3.0, orbitSpeed: 0.5, inclination: 25, eccentricity: 0.15,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L2',
     })
   }
@@ -349,7 +368,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'green-sea-turtle', count: greenTurtleCount,
       scaleX: 1, scaleY: 1, scaleZ: 1, level: 2, trophicLevel: 1,
-      orbitRadius: 3.5, orbitSpeed: 0.4, inclination: 25, eccentricity: 0.15,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L1',
     })
   }
@@ -360,7 +379,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'nautilus', count: nautilusCount,
       scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8, level: 1, trophicLevel: 2,
-      orbitRadius: 4.0, orbitSpeed: 0.35, inclination: 25, eccentricity: 0.15,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L2',
     })
   }
@@ -370,7 +389,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'cleaner-wrasse', count: cleanerWrasseCount,
       scaleX: 0.5, scaleY: 0.5, scaleZ: 0.5, level: 2, trophicLevel: 3,
-      orbitRadius: 1.5, orbitSpeed: 0.6, inclination: 25, eccentricity: 0.12,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L3',
     })
   }
@@ -380,7 +399,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'starfish', count: starfishCount,
       scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6, level: 3, trophicLevel: 3,
-      orbitRadius: 5.0, orbitSpeed: 0.3, inclination: 25, eccentricity: 0.18,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L3',
     })
   }
@@ -390,7 +409,7 @@ export function mapRepoToCreatureMetrics(repo: RepoDetails): CreatureInstruction
     instructions.push({
       creatureType: 'basking-shark', count: baskingSharkCount,
       scaleX: 1.5, scaleY: 1.5, scaleZ: 1.5, level: 4, trophicLevel: 2,
-      orbitRadius: 4.5, orbitSpeed: 0.45, inclination: 25, eccentricity: 0.15,
+      ...getOrbitalParams(5, openIssuesCount),
       orbitalGroup: 5, dataAccessLevel: 'L2',
     })
   }

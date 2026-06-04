@@ -607,6 +607,93 @@ describe('mapRepoToCreatureMetrics', () => {
     const result = mapRepoToCreatureMetrics(repo)
     expect(findCreature(result, 'bluefin-tuna')).toBeUndefined()
   })
+
+  describe('Keplerian orbital parameters and eccentricity scaling', () => {
+    it('correctly maps Keplerian group parameters for each group', () => {
+      const repo = createMockRepo({
+        contributor_count: 5, // Builders (group 1)
+        watchers_count: 5,    // Admirers (group 2)
+        forks_count: 10,      // Offspring (group 3)
+        open_issues_count: 5, // Problems (group 4)
+        merged_pr_count: 5,   // Resolutions (group 5)
+      })
+
+      const results = mapRepoToCreatureMetrics(repo)
+
+      const builder = findCreature(results, 'bottlenose-dolphin')!
+      expect(builder).toBeDefined()
+      expect(builder.orbitalGroup).toBe(1)
+      expect(builder.orbitRadius).toBe(8)
+      expect(builder.inclination).toBe(5)
+      expect(builder.orbitSpeed).toBe(2.0)
+
+      const admirer = findCreature(results, 'moon-jellyfish')!
+      expect(admirer).toBeDefined()
+      expect(admirer.orbitalGroup).toBe(2)
+      expect(admirer.orbitRadius).toBe(30)
+      expect(admirer.inclination).toBe(70)
+      expect(admirer.orbitSpeed).toBe(0.3)
+
+      const offspring = findCreature(results, 'whale-calf')!
+      expect(offspring).toBeDefined()
+      expect(offspring.orbitalGroup).toBe(3)
+      expect(offspring.orbitRadius).toBe(22)
+      expect(offspring.inclination).toBe(50)
+      expect(offspring.orbitSpeed).toBe(0.8)
+
+      const problem = findCreature(results, 'barracuda')!
+      expect(problem).toBeDefined()
+      expect(problem.orbitalGroup).toBe(4)
+      expect(problem.orbitRadius).toBe(14)
+      expect(problem.inclination).toBe(35)
+      expect(problem.orbitSpeed).toBe(1.4)
+
+      const resolution = findCreature(results, 'leatherback-turtle')!
+      expect(resolution).toBeDefined()
+      expect(resolution.orbitalGroup).toBe(5)
+      expect(resolution.orbitRadius).toBe(18)
+      expect(resolution.inclination).toBe(15)
+      expect(resolution.orbitSpeed).toBe(0.6)
+    })
+
+    it('scales eccentricity with open issues according to the formula', () => {
+      // With 50 open issues
+      const repo50 = createMockRepo({
+        contributor_count: 5,
+        watchers_count: 5,
+        forks_count: 10,
+        open_issues_count: 50,
+        merged_pr_count: 5,
+      })
+      const results50 = mapRepoToCreatureMetrics(repo50)
+
+      // Expected eccentricity = base_ecc + (50 / 100) * 0.3 = base_ecc + 0.15
+      expect(findCreature(results50, 'bottlenose-dolphin')!.eccentricity).toBeCloseTo(0.25)
+      expect(findCreature(results50, 'moon-jellyfish')!.eccentricity).toBeCloseTo(0.25)
+      expect(findCreature(results50, 'whale-calf')!.eccentricity).toBeCloseTo(0.55)
+      expect(findCreature(results50, 'barracuda')!.eccentricity).toBeCloseTo(0.75)
+      expect(findCreature(results50, 'leatherback-turtle')!.eccentricity).toBeCloseTo(0.35)
+
+      // With 200 open issues, should be capped at 0.9
+      const repo200 = createMockRepo({
+        contributor_count: 5,
+        watchers_count: 5,
+        forks_count: 10,
+        open_issues_count: 200,
+        merged_pr_count: 5,
+      })
+      const results200 = mapRepoToCreatureMetrics(repo200)
+
+      // Builders: 0.1 + 0.6 = 0.7
+      expect(findCreature(results200, 'bottlenose-dolphin')!.eccentricity).toBeCloseTo(0.7)
+      // Offspring: 0.4 + 0.6 = 1.0 -> capped at 0.9
+      expect(findCreature(results200, 'whale-calf')!.eccentricity).toBeCloseTo(0.9)
+      // Problems: 0.6 + 0.6 = 1.2 -> capped at 0.9
+      expect(findCreature(results200, 'barracuda')!.eccentricity).toBeCloseTo(0.9)
+      // Resolutions: 0.2 + 0.6 = 0.8
+      expect(findCreature(results200, 'leatherback-turtle')!.eccentricity).toBeCloseTo(0.8)
+    })
+  })
 })
 
 describe('mapRepoToKelpTower', () => {
