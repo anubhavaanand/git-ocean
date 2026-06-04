@@ -2,6 +2,7 @@ import {
   fetchUserProfile as rawFetchUserProfile,
   fetchUserRepos as rawFetchUserRepos,
   fetchRepoDetails as rawFetchRepoDetails,
+  fetchWorkflowRunStatus as rawFetchWorkflowRunStatus,
 } from './github-api'
 import type {
   GitHubUserProfile,
@@ -14,6 +15,7 @@ const CACHE_TTL = {
   PROFILE: 300,
   REPOS: 300,
   REPO_DETAILS: 120,
+  WORKFLOW_STATUS: 120,
 }
 
 function cacheKey(prefix: string, ...parts: string[]): string {
@@ -79,5 +81,22 @@ export async function fetchRepoDetails(
 
   const result = await rawFetchRepoDetails(token, owner, repo)
   await kvSet(cache, key, result.details, CACHE_TTL.REPO_DETAILS)
+  return { ...result, cachedAt: new Date().toISOString() }
+}
+
+export async function fetchWorkflowRunStatus(
+  token: string,
+  owner: string,
+  repo: string,
+  cache?: KVNamespace,
+): Promise<{ conclusion: string | null; rateLimit: RateLimitInfo; cachedAt?: string }> {
+  if (!cache) return rawFetchWorkflowRunStatus(token, owner, repo)
+
+  const key = cacheKey('actions', owner, repo)
+  const cached = await kvGet<{ conclusion: string | null }>(cache, key)
+  if (cached) return { conclusion: cached.data.conclusion, rateLimit: { remaining: -1, limit: -1, reset: 0 }, cachedAt: cached.cachedAt }
+
+  const result = await rawFetchWorkflowRunStatus(token, owner, repo)
+  await kvSet(cache, key, { conclusion: result.conclusion }, CACHE_TTL.WORKFLOW_STATUS)
   return { ...result, cachedAt: new Date().toISOString() }
 }

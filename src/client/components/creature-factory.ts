@@ -2012,6 +2012,7 @@ export interface SwarmInstance {
 }
 
 export interface InstancedSwarm {
+  group: THREE.Group
   meshes: THREE.InstancedMesh[]
   count: number
   updateInstance(
@@ -2123,6 +2124,11 @@ export function createInstancedSwarm(
     return im
   })
 
+  const group = new THREE.Group()
+  for (const mesh of meshes) {
+    group.add(mesh)
+  }
+
   const updateInstance = (
     index: number,
     position: THREE.Vector3,
@@ -2152,7 +2158,7 @@ export function createInstancedSwarm(
     }
   }
 
-  return { meshes, count, updateInstance, dispose }
+  return { group, meshes, count, updateInstance, dispose }
 }
 
 // ══════════════════════════════════════════════════════════════════════

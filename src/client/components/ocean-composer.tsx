@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Scene, Vector3, Euler } from 'three'
+import { Scene, Vector3, Euler, LOD } from 'three'
 import { OceanScene } from './ocean-scene'
 import { createOceanFloor } from './ocean-floor'
 import { createKelpTower } from './kelp-tower'
@@ -93,7 +93,14 @@ function repoToCreatureType(repo: GitHubRepoData): CreatureType {
 
 export function OceanComposer({ repoData, className }: OceanComposerProps) {
   const updatablesRef = useRef<((time: number) => void)[]>([])
-  const SWARM_TYPES: CreatureType[] = ['jellyfish', 'barracuda', 'dolphin']
+  const SWARM_TYPES: CreatureType[] = [
+    'dinoflagellates',
+    'krill-swarm',
+    'copepods',
+    'arrow-worms',
+    'amphipod-surge',
+    'herring-school',
+  ]
   const { positionsRef, init: initWorker, requestFrame, stop: stopWorker } = useOrbitalWorker()
 
   const handleSceneReady = useCallback(
@@ -102,6 +109,7 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
       scene.add(floor)
 
       const whales: WhaleEntity[] = []
+      const towers: LOD[] = []
 
       repoData.forEach((repo, index) => {
         const color = WHALE_COLORS[index % WHALE_COLORS.length] as string
@@ -118,8 +126,10 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
           frondDensity: Math.min(repo.forks / 10, 1),
           color,
           position: pos,
+          workflowStatus: repo.workflowStatus,
         })
         scene.add(tower)
+        towers.push(tower)
 
         const size = 0.5 + Math.min(repo.stars / 100, 0.8)
         const whale = createWhale({
@@ -149,35 +159,8 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
         }
 
         if (creatureConfig.count >= 2 && SWARM_TYPES.includes(creatureType)) {
-          const swarm = createInstancedSwarm(
-            creatureType,
-            creatureConfig.count,
-            creatureConfig.size,
-            creatureConfig.color,
-          )
-          const offsets = Array.from(
-            { length: creatureConfig.count },
-            (_, i) => (i / creatureConfig.count) * Math.PI * 2,
-          )
-          const r = creatureConfig.orbitRadius
-
-          for (let i = 0; i < creatureConfig.count; i++) {
-            const a = offsets[i]!
-            swarm.updateInstance(
-              i,
-              new Vector3(
-                Math.cos(a) * (r + (Math.random() - 0.5) * 0.5),
-                Math.sin(0 + a) * 0.3,
-                Math.sin(a) * (r + (Math.random() - 0.5) * 0.5),
-              ),
-              new Euler(0, -a + Math.PI / 2, 0),
-              new Vector3(1, 1, 1),
-            )
-          }
-
-          for (const mesh of swarm.meshes) {
-            whale.add(mesh)
-          }
+          const swarm = createInstancedSwarm(creatureConfig)
+          whale.add(swarm.group)
         } else {
           const creatures = createCreature(creatureConfig)
           whale.add(creatures)
@@ -215,6 +198,12 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
             }
           })
         }
+
+        towers.forEach((tower) => {
+          if (typeof tower.userData['update'] === 'function') {
+            tower.userData['update'](time)
+          }
+        })
       })
     },
     [repoData, initWorker, requestFrame, positionsRef],

@@ -18,6 +18,7 @@ import {
   fetchUserProfile,
   fetchUserRepos,
   fetchRepoDetails,
+  fetchWorkflowRunStatus,
 } from '@/server/services/github-cache'
 
 const app = new Hono<AuthContext>()
@@ -351,6 +352,42 @@ app.get('/repos/:owner/:repo', zValidator('param', repoParamsSchema), async (c) 
   } catch (err) {
     return c.json(
       { error: err instanceof Error ? err.message : 'Failed to fetch repo details' },
+      502,
+    )
+  }
+})
+
+// ─── Actions Workflow Status ───────────────────────────────────────
+
+app.get('/repos/:owner/:repo/actions', async (c) => {
+  const userId = c.get('userId')
+  const owner = c.req.param('owner')
+  const repo = c.req.param('repo')
+  const db = drizzle(c.env.DB)
+
+  const connection = await db
+    .select()
+    .from(gitHubConnections)
+    .where(eq(gitHubConnections.userId, userId))
+    .get()
+
+  if (!connection) {
+    return c.json({ error: 'No GitHub connection found' }, 404)
+  }
+
+  let token: string
+  try {
+    token = await decryptToken(connection.accessToken, c.env.BETTER_AUTH_SECRET)
+  } catch {
+    return c.json({ error: 'Failed to decrypt stored token' }, 500)
+  }
+
+  try {
+    const { conclusion, rateLimit, cachedAt } = await fetchWorkflowRunStatus(token, owner, repo, c.env.GITHUB_CACHE)
+    return c.json({ conclusion, rateLimit, cachedAt: cachedAt ?? null })
+  } catch (err) {
+    return c.json(
+      { error: err instanceof Error ? err.message : 'Failed to fetch workflow status' },
       502,
     )
   }

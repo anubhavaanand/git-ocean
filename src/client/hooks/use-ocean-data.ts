@@ -1,3 +1,5 @@
+export type WorkflowStatus = 'success' | 'failure' | 'cancelled' | 'unknown'
+
 export interface GitHubRepoData {
   id: number
   name: string
@@ -8,6 +10,7 @@ export interface GitHubRepoData {
   issues: number
   language: string
   url: string
+  workflowStatus?: WorkflowStatus
 }
 
 const mockRepos: GitHubRepoData[] = [
@@ -21,6 +24,7 @@ const mockRepos: GitHubRepoData[] = [
     issues: 5,
     language: 'TypeScript',
     url: 'https://github.com/user/ocean-engine',
+    workflowStatus: 'success',
   },
   {
     id: 2,
@@ -32,6 +36,7 @@ const mockRepos: GitHubRepoData[] = [
     issues: 12,
     language: 'Rust',
     url: 'https://github.com/user/coral-db',
+    workflowStatus: 'failure',
   },
   {
     id: 3,
@@ -43,6 +48,7 @@ const mockRepos: GitHubRepoData[] = [
     issues: 3,
     language: 'Go',
     url: 'https://github.com/user/whale-cli',
+    workflowStatus: 'success',
   },
 ]
 

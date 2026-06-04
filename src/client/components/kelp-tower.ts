@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { LOD_DISTANCES } from './lod-system'
+import type { WorkflowStatus } from '@/client/hooks/use-ocean-data'
 
 export interface KelpTowerConfig {
   height: number
@@ -32,6 +33,7 @@ export interface KelpTowerConfig {
   hasDownloads?: boolean
   securityScanningActive?: boolean
   referringSites?: number
+  workflowStatus?: WorkflowStatus
 }
 
 function buildBaseTower(
@@ -40,6 +42,8 @@ function buildBaseTower(
   stepSize: number,
   leafStep: number,
   frondDensity: number,
+  materials?: THREE.MeshStandardMaterial[],
+  workflowStatus?: WorkflowStatus,
 ): THREE.Group {
   const group = new THREE.Group()
 
@@ -48,6 +52,23 @@ function buildBaseTower(
     roughness: 0.7,
     metalness: 0.1,
   })
+
+  if (workflowStatus === 'success') {
+    stalkMat.emissive = new THREE.Color('#10b981')
+    stalkMat.emissiveIntensity = 0.4
+  } else if (workflowStatus === 'failure') {
+    stalkMat.color = new THREE.Color('#7f1d1d')
+    stalkMat.emissive = new THREE.Color('#ef4444')
+    stalkMat.emissiveIntensity = 0.6
+  } else if (workflowStatus === 'cancelled') {
+    stalkMat.color = new THREE.Color('#4b5563')
+    stalkMat.emissive = new THREE.Color('#9ca3af')
+    stalkMat.emissiveIntensity = 0.2
+  }
+
+  if (materials) {
+    materials.push(stalkMat)
+  }
 
   const segments = Math.max(2, Math.floor(height / stepSize))
   for (let i = 0; i < segments; i++) {
@@ -568,6 +589,30 @@ function addLegacyVisuals(group: THREE.Group, config: KelpTowerConfig): void {
     group.add(stalk)
   }
 
+  if (config.workflowStatus && config.workflowStatus !== 'unknown') {
+    const glowColors: Record<string, string> = {
+      success: '#00b894',
+      failure: '#ff6b6b',
+      cancelled: '#fdcb6e',
+    }
+    const gc = glowColors[config.workflowStatus] ?? '#636e72'
+    const glowRingMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(gc),
+      emissive: new THREE.Color(gc),
+      emissiveIntensity: 0.8,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+    })
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.07, 0.008, 8, 16),
+      glowRingMat,
+    )
+    ring.position.y = 0.01
+    ring.rotation.x = Math.PI / 2
+    group.add(ring)
+  }
+
   if (config.referringSites && config.referringSites > 0) {
     const count = Math.min(Math.round(config.referringSites), 8)
     const schoolMat = new THREE.MeshStandardMaterial({
@@ -596,17 +641,66 @@ export function createKelpTower(config: KelpTowerConfig): THREE.LOD {
   const c = new THREE.Color(config.color)
 
   const lod = new THREE.LOD()
+  const materials: THREE.MeshStandardMaterial[] = []
 
-  const highTower = buildBaseTower(config.height, c, 0.6, 0.7, config.frondDensity)
+  const highTower = buildBaseTower(
+    config.height,
+    c,
+    0.6,
+    0.7,
+    config.frondDensity,
+    materials,
+    config.workflowStatus,
+  )
   addLegacyVisuals(highTower, config)
   lod.addLevel(highTower, 0)
 
-  const mediumTower = buildBaseTower(config.height, c, 1.0, 1.2, config.frondDensity * 0.7)
+  const mediumTower = buildBaseTower(
+    config.height,
+    c,
+    1.0,
+    1.2,
+    config.frondDensity * 0.7,
+    materials,
+    config.workflowStatus,
+  )
   lod.addLevel(mediumTower, LOD_DISTANCES.high)
 
-  const lowTower = buildBaseTower(config.height, c, 1.5, 2.0, config.frondDensity * 0.4)
+  const lowTower = buildBaseTower(
+    config.height,
+    c,
+    1.5,
+    2.0,
+    config.frondDensity * 0.4,
+    materials,
+    config.workflowStatus,
+  )
   lod.addLevel(lowTower, LOD_DISTANCES.medium)
 
   lod.position.copy(config.position)
+
+  if (config.workflowStatus === 'success') {
+    lod.userData['update'] = (time: number) => {
+      const intensity = 0.2 + 0.3 * Math.sin(time * 2.5)
+      for (const mat of materials) {
+        mat.emissiveIntensity = intensity
+      }
+    }
+  } else if (config.workflowStatus === 'failure') {
+    lod.userData['update'] = (time: number) => {
+      const intensity = 0.3 + 0.5 * Math.sin(time * 6.0)
+      for (const mat of materials) {
+        mat.emissiveIntensity = intensity
+      }
+    }
+  } else if (config.workflowStatus === 'cancelled') {
+    lod.userData['update'] = (time: number) => {
+      const intensity = 0.1 + 0.15 * Math.sin(time * 1.5)
+      for (const mat of materials) {
+        mat.emissiveIntensity = intensity
+      }
+    }
+  }
+
   return lod
 }

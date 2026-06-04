@@ -875,6 +875,34 @@ export async function fetchRepoDetails(
   return { details: RepoDetails.parse(merged), rateLimit: l1.rateLimit }
 }
 
+export async function fetchWorkflowRunStatus(
+  token: string,
+  owner: string,
+  repo: string,
+): Promise<{ conclusion: string | null; rateLimit: RateLimitInfo }> {
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/actions/runs?per_page=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'git-ocean',
+        },
+      },
+    )
+    if (!resp.ok) {
+      return { conclusion: null, rateLimit: extractRateLimit(resp.headers) }
+    }
+    const body = (await resp.json()) as { workflow_runs?: Array<{ conclusion: string | null }> }
+    const runs = body.workflow_runs ?? []
+    const conclusion = runs.length > 0 ? (runs[0]?.conclusion ?? null) : null
+    return { conclusion, rateLimit: extractRateLimit(resp.headers) }
+  } catch {
+    return { conclusion: null, rateLimit: { remaining: -1, limit: -1, reset: 0 } }
+  }
+}
+
 // ─── Existing endpoints (unchanged signature) ────────────────────────
 
 export async function fetchUserProfile(
