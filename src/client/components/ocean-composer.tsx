@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
-import { Scene, Vector3, LOD } from 'three'
+import { Scene, Vector3, LOD, Euler, Object3D } from 'three'
 import { OceanScene } from './ocean-scene'
 import { createOceanFloor } from './ocean-floor'
 import { createKelpTower } from './kelp-tower'
@@ -11,6 +11,7 @@ import {
   type CreatureType,
 } from './creature-factory'
 import { useOrbitalWorker } from '@/client/lib/useOrbitalWorker'
+import type { CreatureOrbitConfig } from '@/client/workers/orbital-math.worker'
 import type { GitHubRepoData } from '@/client/hooks/use-ocean-data'
 
 interface OceanComposerProps {
@@ -110,6 +111,12 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
 
       const whales: WhaleEntity[] = []
       const towers: LOD[] = []
+      const creatureConfigs: CreatureOrbitConfig[] = []
+      const creatureUpdates: Array<
+        | { type: 'single'; object: Object3D; id: number }
+        | { type: 'swarm'; swarm: any; index: number; id: number }
+      > = []
+      let creatureIdCounter = 0
 
       repoData.forEach((repo, index) => {
         const color = WHALE_COLORS[index % WHALE_COLORS.length] as string
@@ -161,9 +168,53 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
         if (creatureConfig.count >= 2 && SWARM_TYPES.includes(creatureType)) {
           const swarm = createInstancedSwarm(creatureConfig)
           whale.add(swarm.group)
+
+          for (let instIndex = 0; instIndex < creatureConfig.count; instIndex++) {
+            const creatureId = creatureIdCounter++
+            const offset = (instIndex / creatureConfig.count) * Math.PI * 2
+
+            creatureConfigs.push({
+              id: creatureId,
+              parentId: index,
+              orbitRadius: creatureConfig.orbitRadius,
+              orbitSpeed: creatureConfig.orbitSpeed,
+              eccentricity: creatureConfig.eccentricity,
+              inclination: creatureConfig.inclination,
+              offset: offset,
+            })
+
+            creatureUpdates.push({
+              type: 'swarm',
+              swarm,
+              index: instIndex,
+              id: creatureId,
+            })
+          }
         } else {
           const creatures = createCreature(creatureConfig)
           whale.add(creatures)
+
+          const count = creatureConfig.count
+          creatures.children.forEach((child, childIndex) => {
+            const creatureId = creatureIdCounter++
+            const offset = count <= 1 ? 0 : (childIndex / count) * Math.PI * 2
+
+            creatureConfigs.push({
+              id: creatureId,
+              parentId: index,
+              orbitRadius: creatureConfig.orbitRadius,
+              orbitSpeed: creatureConfig.orbitSpeed,
+              eccentricity: creatureConfig.eccentricity,
+              inclination: creatureConfig.inclination,
+              offset: offset,
+            })
+
+            creatureUpdates.push({
+              type: 'single',
+              object: child,
+              id: creatureId,
+            })
+          })
         }
       })
 
@@ -177,11 +228,11 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
           scale: 0.5 + Math.min((repo?.stars ?? 0) / 100, 0.8),
         }
       })
-      initWorker(whaleConfigs, [])
+      initWorker(whaleConfigs, creatureConfigs)
 
       updatablesRef.current.push((time: number) => {
         requestFrame(time)
-        const { whales: whalePositions } = positionsRef.current
+        const { whales: whalePositions, creatures: creaturePositions } = positionsRef.current
 
         for (let i = 0; i < whales.length; i++) {
           const whale = whales[i]
@@ -191,13 +242,24 @@ export function OceanComposer({ repoData, className }: OceanComposerProps) {
             whale.position.set(pos.x, pos.y, pos.z)
             whale.rotation.y = pos.rotationY
           }
-
-          whale.children.forEach((child) => {
-            if (typeof child.userData['update'] === 'function') {
-              child.userData['update'](time)
-            }
-          })
         }
+
+        creatureUpdates.forEach((update) => {
+          const pos = creaturePositions.get(update.id)
+          if (pos) {
+            if (update.type === 'single') {
+              update.object.position.set(pos.x, pos.y, pos.z)
+              update.object.rotation.y = pos.rotationY
+            } else if (update.type === 'swarm') {
+              update.swarm.updateInstance(
+                update.index,
+                new Vector3(pos.x, pos.y, pos.z),
+                new Euler(0, pos.rotationY, 0),
+                new Vector3(1, 1, 1),
+              )
+            }
+          }
+        })
 
         towers.forEach((tower) => {
           if (typeof tower.userData['update'] === 'function') {
