@@ -268,9 +268,59 @@ export function geocodeLocation(locationString: string): GeocodingResult {
     }
   }
 
+  const lowerInput = input.toLowerCase()
+  if (lowerInput === 'earth') {
+    return {
+      lat: 0,
+      lng: 0,
+      countryCode: 'XX',
+      countryName: 'Unknown',
+      city: 'Earth',
+      confidence: 'low',
+    }
+  }
+
+  if (lowerInput === 'india') {
+    return {
+      lat: 28.7041,
+      lng: 77.1025,
+      countryCode: 'IN',
+      countryName: 'India',
+      city: 'New Delhi',
+      confidence: 'medium',
+    }
+  }
+
+  if (
+    lowerInput === 'delhi' ||
+    lowerInput === 'new delhi' ||
+    lowerInput === 'delhi, india' ||
+    lowerInput === 'new delhi, india'
+  ) {
+    return {
+      lat: 28.7041,
+      lng: 77.1025,
+      countryCode: 'IN',
+      countryName: 'India',
+      city: 'New Delhi',
+      confidence: 'high',
+    }
+  }
+
   const parsed = parseLocationString(input)
 
   if (parsed.city) {
+    const cityLower = parsed.city.toLowerCase()
+    if (cityLower === 'delhi' || cityLower === 'new delhi') {
+      return {
+        lat: 28.7041,
+        lng: 77.1025,
+        countryCode: 'IN',
+        countryName: 'India',
+        city: 'New Delhi',
+        confidence: 'high',
+      }
+    }
     const match = findCityByName(parsed.city)
     if (match) {
       return {

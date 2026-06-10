@@ -21,11 +21,7 @@ test('P4-002: skill editor arms beforeunload prompt while dirty', async ({ page 
   // is one of the always-bundled skills (12 ship with the starter).
   await page.goto('/dashboard/skills/code-review')
 
-  // SkillEditor opens on the Overview tab — click Source so the
-  // CodeMirror editor renders.
-  const sourceTab = page.getByRole('tab', { name: /^source$/i }).first()
-  await sourceTab.waitFor({ state: 'visible', timeout: 10_000 })
-  await sourceTab.click()
+  // The SkillEditor renders a CodeMirror instance directly.
 
   // The SkillEditor renders a CodeMirror instance — any keystroke into
   // its content area dirties the buffer. CodeMirror's editable element

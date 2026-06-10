@@ -66,6 +66,36 @@ describe('geocodeLocation', () => {
     expect(result.city).toBe('Atlantis')
   })
 
+  it('returns high confidence for "Delhi, India" mapping to New Delhi', () => {
+    const result = geocodeLocation('Delhi, India')
+    expect(result.confidence).toBe('high')
+    expect(result.city).toBe('New Delhi')
+    expect(result.countryCode).toBe('IN')
+    expect(result.countryName).toBe('India')
+    expect(result.lat).toBe(28.7041)
+    expect(result.lng).toBe(77.1025)
+  })
+
+  it('returns medium confidence for "India" mapping to New Delhi station default', () => {
+    const result = geocodeLocation('India')
+    expect(result.confidence).toBe('medium')
+    expect(result.city).toBe('New Delhi')
+    expect(result.countryCode).toBe('IN')
+    expect(result.countryName).toBe('India')
+    expect(result.lat).toBe(28.7041)
+    expect(result.lng).toBe(77.1025)
+  })
+
+  it('returns low confidence for "Earth" mapping to deep ocean scatter fallback', () => {
+    const result = geocodeLocation('Earth')
+    expect(result.confidence).toBe('low')
+    expect(result.city).toBe('Earth')
+    expect(result.countryCode).toBe('XX')
+    expect(result.countryName).toBe('Unknown')
+    expect(result.lat).toBe(0)
+    expect(result.lng).toBe(0)
+  })
+
   it('returns low confidence for empty string', () => {
     const result = geocodeLocation('')
     expect(result.confidence).toBe('low')

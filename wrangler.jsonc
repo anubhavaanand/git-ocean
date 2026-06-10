@@ -108,21 +108,21 @@
   ],
 
   // Workers AI (for AI features)
-  "ai": {
-    "binding": "AI"
-  },
+  // "ai": {
+  //   "binding": "AI"
+  // },
 
   // Cloudflare Images (resize, crop, format conversion, background removal, face crop)
   // https://developers.cloudflare.com/images/transform-images/bindings/
-  "images": {
-    "binding": "IMAGES"
-  },
+  // "images": {
+  //   "binding": "IMAGES"
+  // },
 
   // Cloudflare Media Transformations (video resize, clip, frame extraction, audio)
   // https://developers.cloudflare.com/stream/transform-videos/
-  "media": {
-    "binding": "MEDIA"
-  },
+  // "media": {
+  //   "binding": "MEDIA"
+  // },
 
   // Vectorize (semantic search, RAG)
   // Create with: npx wrangler vectorize create vite-flare-starter-vectors --dimensions=768 --metric=cosine
