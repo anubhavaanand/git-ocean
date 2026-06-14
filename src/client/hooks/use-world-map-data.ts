@@ -9,36 +9,39 @@ export interface CountryData {
   languageBreakdown: { name: string; percentage: number }[]
 }
 
-const mockCountries: CountryData[] = [
-  { code: 'US', name: 'United States', repoCount: 342, contributorCount: 1280, lat: 37.09, lng: -95.71, topLanguages: ['JavaScript', 'TypeScript', 'Python', 'Go', 'Rust'], languageBreakdown: [{ name: 'JavaScript', percentage: 35 }, { name: 'TypeScript', percentage: 20 }, { name: 'Python', percentage: 18 }, { name: 'Go', percentage: 12 }, { name: 'Rust', percentage: 8 }, { name: 'Other', percentage: 7 }] },
-  { code: 'GB', name: 'United Kingdom', repoCount: 189, contributorCount: 720, lat: 55.38, lng: -3.44, topLanguages: ['Python', 'JavaScript', 'TypeScript', 'Java', 'Go'], languageBreakdown: [{ name: 'Python', percentage: 30 }, { name: 'JavaScript', percentage: 25 }, { name: 'TypeScript', percentage: 18 }, { name: 'Java', percentage: 12 }, { name: 'Go', percentage: 8 }, { name: 'Other', percentage: 7 }] },
-  { code: 'DE', name: 'Germany', repoCount: 156, contributorCount: 590, lat: 51.16, lng: 10.45, topLanguages: ['Java', 'Python', 'JavaScript', 'TypeScript', 'Rust'], languageBreakdown: [{ name: 'Java', percentage: 28 }, { name: 'Python', percentage: 24 }, { name: 'JavaScript', percentage: 20 }, { name: 'TypeScript', percentage: 14 }, { name: 'Rust', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'IN', name: 'India', repoCount: 210, contributorCount: 890, lat: 20.59, lng: 78.96, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 32 }, { name: 'Python', percentage: 25 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 12 }, { name: 'C++', percentage: 8 }, { name: 'Other', percentage: 5 }] },
-  { code: 'JP', name: 'Japan', repoCount: 134, contributorCount: 480, lat: 36.20, lng: 138.25, topLanguages: ['JavaScript', 'Java', 'Python', 'TypeScript', 'Ruby'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Java', percentage: 22 }, { name: 'Python', percentage: 18 }, { name: 'TypeScript', percentage: 14 }, { name: 'Ruby', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'AU', name: 'Australia', repoCount: 98, contributorCount: 340, lat: -25.27, lng: 133.78, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Go', 'Java'], languageBreakdown: [{ name: 'JavaScript', percentage: 33 }, { name: 'Python', percentage: 22 }, { name: 'TypeScript', percentage: 18 }, { name: 'Go', percentage: 12 }, { name: 'Java', percentage: 10 }, { name: 'Other', percentage: 5 }] },
-  { code: 'CN', name: 'China', repoCount: 240, contributorCount: 920, lat: 35.86, lng: 104.19, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 12 }, { name: 'C++', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'BR', name: 'Brazil', repoCount: 112, contributorCount: 410, lat: -14.23, lng: -51.93, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C#'], languageBreakdown: [{ name: 'JavaScript', percentage: 34 }, { name: 'Python', percentage: 22 }, { name: 'Java', percentage: 16 }, { name: 'TypeScript', percentage: 12 }, { name: 'C#', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'CA', name: 'Canada', repoCount: 145, contributorCount: 530, lat: 56.13, lng: -106.35, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Go', 'Java'], languageBreakdown: [{ name: 'JavaScript', percentage: 31 }, { name: 'Python', percentage: 23 }, { name: 'TypeScript', percentage: 20 }, { name: 'Go', percentage: 12 }, { name: 'Java', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'FR', name: 'France', repoCount: 138, contributorCount: 510, lat: 46.60, lng: 1.88, topLanguages: ['Python', 'JavaScript', 'Java', 'TypeScript', 'Go'], languageBreakdown: [{ name: 'Python', percentage: 28 }, { name: 'JavaScript', percentage: 26 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 14 }, { name: 'Go', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'KR', name: 'South Korea', repoCount: 120, contributorCount: 450, lat: 35.91, lng: 127.77, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 32 }, { name: 'Python', percentage: 22 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 14 }, { name: 'C++', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'NL', name: 'Netherlands', repoCount: 85, contributorCount: 310, lat: 52.13, lng: 5.29, topLanguages: ['Python', 'JavaScript', 'TypeScript', 'Go', 'Java'], languageBreakdown: [{ name: 'Python', percentage: 30 }, { name: 'JavaScript', percentage: 24 }, { name: 'TypeScript', percentage: 18 }, { name: 'Go', percentage: 14 }, { name: 'Java', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'RU', name: 'Russia', repoCount: 130, contributorCount: 470, lat: 61.52, lng: 105.32, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 28 }, { name: 'Python', percentage: 26 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 12 }, { name: 'C++', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'SE', name: 'Sweden', repoCount: 72, contributorCount: 260, lat: 60.13, lng: 18.64, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Java', 'Go'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'TypeScript', percentage: 18 }, { name: 'Java', percentage: 12 }, { name: 'Go', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'SG', name: 'Singapore', repoCount: 65, contributorCount: 230, lat: 1.35, lng: 103.82, topLanguages: ['JavaScript', 'TypeScript', 'Python', 'Go', 'Java'], languageBreakdown: [{ name: 'JavaScript', percentage: 32 }, { name: 'TypeScript', percentage: 22 }, { name: 'Python', percentage: 20 }, { name: 'Go', percentage: 12 }, { name: 'Java', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'IL', name: 'Israel', repoCount: 78, contributorCount: 290, lat: 31.05, lng: 34.85, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Go', 'Java'], languageBreakdown: [{ name: 'JavaScript', percentage: 34 }, { name: 'Python', percentage: 20 }, { name: 'TypeScript', percentage: 18 }, { name: 'Go', percentage: 14 }, { name: 'Java', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'ES', name: 'Spain', repoCount: 88, contributorCount: 320, lat: 40.46, lng: -3.75, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'Kotlin'], languageBreakdown: [{ name: 'JavaScript', percentage: 32 }, { name: 'Python', percentage: 22 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 12 }, { name: 'Kotlin', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'IT', name: 'Italy', repoCount: 82, contributorCount: 300, lat: 41.87, lng: 12.57, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'PHP'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'Java', percentage: 18 }, { name: 'TypeScript', percentage: 12 }, { name: 'PHP', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'PL', name: 'Poland', repoCount: 68, contributorCount: 250, lat: 51.92, lng: 19.15, topLanguages: ['JavaScript', 'Python', 'Java', 'TypeScript', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'Java', percentage: 16 }, { name: 'TypeScript', percentage: 14 }, { name: 'C++', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'TW', name: 'Taiwan', repoCount: 75, contributorCount: 270, lat: 23.70, lng: 120.96, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Java', 'C++'], languageBreakdown: [{ name: 'JavaScript', percentage: 32 }, { name: 'Python', percentage: 22 }, { name: 'TypeScript', percentage: 18 }, { name: 'Java', percentage: 14 }, { name: 'C++', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'CH', name: 'Switzerland', repoCount: 60, contributorCount: 220, lat: 46.82, lng: 8.23, topLanguages: ['Python', 'JavaScript', 'TypeScript', 'Java', 'Go'], languageBreakdown: [{ name: 'Python', percentage: 28 }, { name: 'JavaScript', percentage: 24 }, { name: 'TypeScript', percentage: 20 }, { name: 'Java', percentage: 12 }, { name: 'Go', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-  { code: 'FI', name: 'Finland', repoCount: 45, contributorCount: 160, lat: 61.92, lng: 25.75, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'Java', 'Go'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'TypeScript', percentage: 18 }, { name: 'Java', percentage: 14 }, { name: 'Go', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'NO', name: 'Norway', repoCount: 48, contributorCount: 170, lat: 60.47, lng: 8.47, topLanguages: ['Python', 'JavaScript', 'TypeScript', 'Go', 'Java'], languageBreakdown: [{ name: 'Python', percentage: 28 }, { name: 'JavaScript', percentage: 26 }, { name: 'TypeScript', percentage: 18 }, { name: 'Go', percentage: 14 }, { name: 'Java', percentage: 8 }, { name: 'Other', percentage: 6 }] },
-  { code: 'DK', name: 'Denmark', repoCount: 52, contributorCount: 190, lat: 56.26, lng: 9.50, topLanguages: ['JavaScript', 'Python', 'TypeScript', 'C#', 'Go'], languageBreakdown: [{ name: 'JavaScript', percentage: 30 }, { name: 'Python', percentage: 24 }, { name: 'TypeScript', percentage: 18 }, { name: 'C#', percentage: 12 }, { name: 'Go', percentage: 10 }, { name: 'Other', percentage: 6 }] },
-]
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/client/lib/api-client'
+
+export interface CountryData {
+  code: string
+  name: string
+  repoCount: number
+  contributorCount: number
+  lat: number
+  lng: number
+  topLanguages: string[]
+  languageBreakdown: { name: string; percentage: number }[]
+}
 
 export function useWorldMapData() {
+  const { data: dbCountries = [], isLoading } = useQuery<any[]>({
+    queryKey: ['geography-countries'],
+    queryFn: () => apiClient.get<any[]>('/api/geography/countries'),
+  })
+
+  const countries: CountryData[] = dbCountries.map((c) => ({
+    code: c.countryCode,
+    name: c.countryName,
+    repoCount: c.repoCount,
+    contributorCount: c.contributorCount,
+    lat: c.lat,
+    lng: c.lng,
+    topLanguages: c.topLanguages || [],
+    languageBreakdown: [],
+  }))
+
   return {
-    countries: mockCountries,
-    loading: false,
+    countries,
+    loading: isLoading,
   }
 }

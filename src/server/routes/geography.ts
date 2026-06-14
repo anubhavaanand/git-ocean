@@ -60,8 +60,8 @@ app.get('/countries', async (c) => {
 
     userMap.set(row.country, {
       username: row.country,
-      repoCount: userMap.get(row.country)?.repoCount ?? 0 + row.repoCount,
-      contributionCount: userMap.get(row.country)?.contributionCount ?? 0 + row.contributionCount,
+      repoCount: (userMap.get(row.country)?.repoCount ?? 0) + row.repoCount,
+      contributionCount: (userMap.get(row.country)?.contributionCount ?? 0) + row.contributionCount,
       languages: [],
     })
   }

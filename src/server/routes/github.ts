@@ -417,4 +417,57 @@ app.post('/disconnect', async (c) => {
   return c.json({ ok: true })
 })
 
+app.get('/auth-url', (c) => {
+  const clientId = c.env.GITHUB_CLIENT_ID
+  if (!clientId) {
+    return c.json({ configured: false })
+  }
+  const redirectUri = c.env.GITHUB_REDIRECT_URI ?? 'http://localhost:5173/auth/github/callback'
+  const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,read:user`
+  return c.json({ configured: true, url })
+})
+
+app.post('/connect-mock', async (c) => {
+  const userId = c.get('userId')
+  const db = drizzle(c.env.DB)
+
+  const encryptedToken = await encryptToken('mock-token', c.env.BETTER_AUTH_SECRET)
+
+  const existing = await db
+    .select({ id: gitHubConnections.id })
+    .from(gitHubConnections)
+    .where(eq(gitHubConnections.userId, userId))
+    .get()
+
+  if (existing) {
+    const updated = await db
+      .update(gitHubConnections)
+      .set({
+        accessToken: encryptedToken,
+        githubUsername: 'MockOceanexplorer',
+        githubAvatarUrl: 'https://github.com/identicons/mock.png',
+        scope: 'repo,read:user',
+        updatedAt: new Date(),
+      })
+      .where(eq(gitHubConnections.userId, userId))
+      .returning()
+      .get()
+    return c.json({ ...updated, accessToken: undefined })
+  }
+
+  const created = await db
+    .insert(gitHubConnections)
+    .values({
+      userId,
+      accessToken: encryptedToken,
+      githubUsername: 'MockOceanexplorer',
+      githubAvatarUrl: 'https://github.com/identicons/mock.png',
+      scope: 'repo,read:user',
+    })
+    .returning()
+    .get()
+
+  return c.json({ ...created, accessToken: undefined })
+})
+
 export default app

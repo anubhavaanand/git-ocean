@@ -15,15 +15,14 @@ import { features } from '@/shared/config/features'
 import { EmptyState } from './components/EmptyState'
 
 // Critical-path imports (always in the main bundle)
-import { LandingPage } from './pages/LandingPage'
 import { DashboardLayout } from './layouts/DashboardLayout'
-import { PublicLayout } from './layouts/PublicLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { OceanPage } from './pages/ocean'
 import { GitDashboardPage } from './pages/git-dashboard'
 import { GitSettingsPage } from './pages/git-settings'
 import { WorldMapPage } from './pages/world-map'
+import { GitHubCallbackPage } from './pages/GitHubCallbackPage'
 
 // Auth pages — small, fast-loading, keep in main bundle
 import { SignInPage } from './modules/auth/SignInPage'
@@ -142,16 +141,14 @@ function App() {
         <ThemeURLHandler />
         <Suspense fallback={<PageSpinner />}>
         <Routes>
-          {/* Public marketing pages with header/footer */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
-          </Route>
+          {/* Public marketing pages — Git Ocean Landing Page */}
+          <Route path="/" element={<GitDashboardPage />} />
 
           {/* Git Ocean routes — 3D underwater GitHub visualization */}
           <Route path="/ocean" element={<SceneErrorBoundary sceneName="Ocean"><OceanPage /></SceneErrorBoundary>} />
           <Route path="/world" element={<SceneErrorBoundary sceneName="World Map"><WorldMapPage /></SceneErrorBoundary>} />
-          <Route path="/dashboard" element={<GitDashboardPage />} />
           <Route path="/settings" element={<GitSettingsPage />} />
+          <Route path="/auth/github/callback" element={<GitHubCallbackPage />} />
 
           {/* Auth routes (standalone, no layout) — bounce already-signed-in
               users back to the dashboard so /sign-in and /sign-up never show

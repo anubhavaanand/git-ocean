@@ -81,7 +81,7 @@ export function WorldMapPage() {
 
   const totalRepos = countries.reduce((s, c) => s + c.repoCount, 0)
   const totalContributors = countries.reduce((s, c) => s + c.contributorCount, 0)
-  const topCountries = [...countries].sort((a, b) => b.repoCount - a.repoCount).slice(5)
+  const topCountries = [...countries].sort((a, b) => b.repoCount - a.repoCount).slice(0, 5)
   const topCountryCodes = new Set(topCountries.map((c) => c.code))
   const colonyCountries = countries.filter((c) => c.repoCount < 50).slice(0, 6)
 

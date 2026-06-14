@@ -42,6 +42,9 @@ import {
   Kanban,
   Layers,
   BookOpen,
+  Globe,
+  Settings,
+  Waves,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -117,6 +120,14 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/dashboard/projects', label: 'Projects', icon: FolderKanban },
       { to: '/dashboard/spaces', label: 'Spaces', icon: Users, feature: 'spaces' },
       { to: '/dashboard/routines', label: 'Routines', icon: Repeat },
+    ],
+  },
+  {
+    label: 'Git Ocean',
+    items: [
+      { to: '/ocean', label: 'Ocean View', icon: Waves },
+      { to: '/world', label: 'World Map', icon: Globe },
+      { to: '/settings', label: 'Ocean Settings', icon: Settings },
     ],
   },
   {

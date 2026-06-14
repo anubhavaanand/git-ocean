@@ -13,49 +13,31 @@ export interface GitHubRepoData {
   workflowStatus?: WorkflowStatus
 }
 
-const mockRepos: GitHubRepoData[] = [
-  {
-    id: 1,
-    name: 'ocean-engine',
-    fullName: 'user/ocean-engine',
-    description: 'A 3D ocean rendering engine powered by WebGL',
-    stars: 85,
-    forks: 23,
-    issues: 5,
-    language: 'TypeScript',
-    url: 'https://github.com/user/ocean-engine',
-    workflowStatus: 'success',
-  },
-  {
-    id: 2,
-    name: 'coral-db',
-    fullName: 'user/coral-db',
-    description: 'Distributed coral reef database',
-    stars: 42,
-    forks: 15,
-    issues: 12,
-    language: 'Rust',
-    url: 'https://github.com/user/coral-db',
-    workflowStatus: 'failure',
-  },
-  {
-    id: 3,
-    name: 'whale-cli',
-    fullName: 'user/whale-cli',
-    description: 'A CLI tool for whale migration patterns',
-    stars: 128,
-    forks: 45,
-    issues: 3,
-    language: 'Go',
-    url: 'https://github.com/user/whale-cli',
-    workflowStatus: 'success',
-  },
-]
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@/client/lib/api-client'
 
 export function useOceanData() {
+  const { data: dbRepos = [], isLoading, error } = useQuery<any[]>({
+    queryKey: ['ocean-repos'],
+    queryFn: () => apiClient.get<any[]>('/api/ocean/repos'),
+  })
+
+  const repos: GitHubRepoData[] = dbRepos.map((row) => ({
+    id: row.githubRepoId,
+    name: row.fullName.split('/')[1] || row.fullName,
+    fullName: row.fullName,
+    description: row.description || '',
+    stars: row.stars,
+    forks: row.forks,
+    issues: row.issues,
+    language: row.language || '',
+    url: `https://github.com/${row.fullName}`,
+    workflowStatus: 'success',
+  }))
+
   return {
-    repos: mockRepos,
-    loading: false,
-    error: null as string | null,
+    repos,
+    loading: isLoading,
+    error: error ? (error instanceof Error ? error.message : String(error)) : null,
   }
 }
