@@ -1,120 +1,73 @@
-# Contributing
+# Contributing to Git Ocean
 
-A short note for fork-builders, AI agents, and anyone shipping on top of
-the starter who notices something worth improving.
+Git Ocean is not a standard web dashboard; it is a highly structured WebGL data visualization engine. To keep the 3D scene optimized and the codebase clean, all contributions must adhere to a strict set of architectural and conceptual rules.
 
-## TL;DR
-
-- **Issues are welcome** — especially fork-build friction. The good ones
-  are diagnostic, not vibes.
-- **Upstream contributions are welcome** — if your fork solves a problem
-  the starter has, send it back as a PR. Bug fixes, doc tightenings, and
-  cleanly-scoped enhancements all get a fast read.
-- **Maintainer**: Jez Dawes ([@jezweb](https://github.com/jezweb)) —
-  responses are usually within a day, often the same session.
+If you want to contribute, read this document fully. PRs that violate the core design laws or performance budgets will be rejected.
 
 ---
 
-## Raising an issue
+## 1. The Core Design Law: The Marine Biologist Test
 
-Recent fork-build issues ([#54](https://github.com/jezweb/vite-flare-starter/issues/54), [#55](https://github.com/jezweb/vite-flare-starter/issues/55), [#56](https://github.com/jezweb/vite-flare-starter/issues/56), [#57](https://github.com/jezweb/vite-flare-starter/issues/57), [#58](https://github.com/jezweb/vite-flare-starter/issues/58))
-are great templates — copy that shape. Each had:
+Git Ocean maps raw GitHub data to an underwater ecosystem using strict scientific hierarchies. 
 
-1. **Real-world context up front** — *"Discovered during a fork build (RightCover)."*
-   Anchors the report to a real scenario, not a hypothetical.
+[span_0](start_span)Every visual element must be scientifically or technically explainable within the underwater world's own logic[span_0](end_span). [span_1](start_span)Fantasy and sci-fi influences are allowed only if they follow real physics, biology, or engineering principles[span_1](end_span).
 
-2. **What happens vs what's expected** — concrete observed behaviour, with
-   error text or symptoms. Not *"this seems off"* — *"deploy succeeds, the
-   domain attaches, but the zone only gets an AAAA record."*
+Before you submit a PR for a new feature or creature, it must pass this test:
+> **[span_2](start_span)"How would a marine biologist or underwater engineer explain this existing?"**[span_2](end_span)
 
-3. **Repro steps** when relevant — three or four lines of CLI / clicks
-   that recreate the problem.
-
-4. **Severity** — Trivial / Low / Medium / High / Critical. Be honest;
-   over-flagging dilutes the rest of the queue. *"Documentation-only"* is
-   a perfectly valid severity.
-
-5. **Suggested fix or workaround** — even *"I don't know what unsticks
-   it"* is useful info. If you've already shipped a patch in your fork,
-   include the diff inline (3-line patches are common; just paste them).
-
-6. **A short title that names the symptom**, not the area. Compare:
-   - 🚫 *"Connectors page issue"*
-   - ✅ *"Workers Custom Domain provisioning: only AAAA, no A record"*
-
-This shape lets the maintainer triage in 60 seconds and ship in 5 minutes
-instead of bouncing back for clarification. The
-[recent doc cluster](https://github.com/jezweb/vite-flare-starter/issues?q=is%3Aclosed+is%3Aissue+label%3Adocumentation)
-all closed within a day because the reports made the fix obvious.
-
-### Labels we use
-
-`bug`, `enhancement`, `documentation`, `question`, `good first issue`,
-`upstream` (waiting on Cloudflare / a third party), `roadmap` (multi-item
-tracker), `claude-suggested` (AI-flagged, might still be worthwhile).
-
-You don't need to label your issue — the maintainer will. Just describe
-the thing well.
+* **Allowed:** Keplerian orbital mechanics, bioluminescence triggered by stress/activity, magnetohydrodynamic propulsion for transit tubes.
+* **Not Allowed:** Magic glowing without biological reason, physically impossible movements, or unexplainable teleportation. If it requires magic, redesign it.
 
 ---
 
-## Upstream contributions are welcome
+## 2. Development Protocol: Visual Render First
 
-Forks are encouraged (see [FORKING.md](./FORKING.md)) and the canonical
-pattern is "your fork tracks `upstream`". When your fork fixes a problem
-that the starter still has, sending the fix back is the cleanest path:
+[span_3](start_span)We operate on a **Visual Render First** sequence[span_3](end_span). 
 
-- **Bug fixes** — yes please. Open a PR or, if it's a 3-line patch, paste
-  it into a bug issue and the maintainer will land it for you.
-- **Doc tightenings** — also yes. The fork-builder lens catches things
-  the maintainer missed because they know the starter too well.
-- **Enhancements** — open an issue first to check the shape fits the
-  starter's "pattern library, not demo" philosophy. We disable modules
-  via feature flags rather than deleting them; new modules should follow
-  the same disable-able pattern.
-- **Refactors** — same: issue first, since refactors usually touch many
-  files and the maintainer might be deep in a related slice.
+[span_4](start_span)Do not wire up the live GitHub GraphQL API when building new 3D visual changes or creatures[span_4](end_span). 
+1. Build the Three.js/WebGL geometry and GLSL shaders using **mock data** first.
+2. Verify the Keplerian orbital math and visual frame rates.
+3. Only after the visual component is perfect should you wire it to the API data pipeline. 
 
-### What "fits the starter" means
-
-The starter is a **pattern library** (see CLAUDE.md). New code should
-demonstrate one technique cleanly so the next fork-builder can read it
-and learn the pattern for this stack. If your contribution adds a third
-way to do something the starter already shows two ways for, that's
-usually a sign to refactor the existing pair instead of adding a third.
-
-PR ergonomics:
-- One concern per PR
-- Clear commit messages (the [recent commit log](https://github.com/jezweb/vite-flare-starter/commits/main)
-  is the style — body explains *why*, not *what*)
-- Type-check + build clean (`pnpm type-check && pnpm build`)
-- If your change is fork-specific (your-product-only), it doesn't belong
-  upstream — keep it in your fork
+This prevents burning GitHub API rate limits during heavy shader iteration. Use `npm run dev:mock` for all local visual development.
 
 ---
 
-## What "good" looks like
+## 3. Architectural Boundaries (DDD)
 
-The recent fork-build issues from RightCover (Apr 2026) shipped 6 doc
-improvements and 1 bug fix in under an hour because the reports were
-diagnostic. Everyone wins:
+The codebase is strictly separated into Domain-Driven Design contexts. Do not bleed logic between these domains:
 
-- **The maintainer** ships fixes fast without back-and-forth.
-- **Your fork** picks up the fix on the next `git pull upstream main`.
-- **Other forks** never hit the issue you flagged.
-
-The opposite — *"thing X feels wrong"* with no diagnosis — costs everyone
-a round of clarification before any progress. Don't be that.
+* **GitHub Data Context:** Handles OAuth, GraphQL fetching, and API rate limiting. This domain knows *nothing* about 3D rendering.
+* **Ocean Ecosystem Context:** Takes abstract data and converts it into marine entities (Trophic Levels 1-5). It handles the math for Keplerian orbits and creature instancing. 
+* **World Map Context:** Handles geographic chunking, inverted heightmaps, and the Level 1/2/3 clustering hierarchy. 
 
 ---
 
-## License + attribution
+## 4. Performance Budgets
 
-The starter is published under its repo licence (see `LICENSE`). Forks
-are free to relicence their own additions; upstream contributions stay
-under the starter's licence.
+WebGL on the browser is unforgiving. Your code must respect these constraints:
+* **Draw Calls:** Use `InstancedMesh` for any grouped creatures (e.g., Krill swarms, Dolphin pods). Do not add individual meshes in loops.
+* **LOD (Level of Detail):** Distance fog and water turbidity must naturally hide distant objects. Implement frustum culling aggressively.
+* **Math Offloading:** Do not run heavy Keplerian orbital math on the main thread. Use Web Workers.
+* **Frame Rate:** The scene must maintain 60 FPS on standard modern hardware.
 
-You don't need to attribute Jezweb in your fork's UI — the
-[fingerprinting checklist in FORKING.md](./FORKING.md#what-gets-fingerprinted-security-checklist)
-explicitly walks you through removing markers. We'd appreciate a star on
-the GitHub repo if the starter saved you time, but it's not required.
+---
+
+## 5. Submitting a Pull Request
+
+When you are ready to submit a PR, ensure it meets the following criteria:
+1. **Scope:** One feature or bug fix per PR. Do not submit massive, multi-domain overhauls.
+2. **Context:** Explain *why* you are making the change, citing the specific API endpoint or marine metaphor used.
+3. **Screenshots/Video:** If you are changing WebGL output or shaders, you MUST include a screen recording of the change running at 60 FPS.
+4. **Tests:** Ensure existing tests pass and add new ones for data-to-creature mapping logic.
+
+### Commit Standards
+Use conventional commits for clear history tracking:
+* `feat:` (New feature or marine entity)
+* `fix:` (Bug fix in API or rendering logic)
+* `perf:` (Performance improvements, shader optimizations)
+* `chore:` (Dependencies, build process changes)
+
+---
+
+By submitting a PR, you agree to license your contribution under the MIT License.
